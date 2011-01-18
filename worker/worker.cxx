@@ -31,8 +31,6 @@
 using namespace std;
 using namespace json_spirit;
 
-// TODO: Add size to the received json comms protocol
-// to avoid parsing multiple messages
 // TODO: Tesselate in parallel
 // TODO: compress 1.00000000 into 1.0 etc.
 
@@ -168,78 +166,82 @@ mValue create_geometry(string id, map< string, mValue > geometry) {
   return mValue("geometry type not found");
 }
 
+int read_exact(char *buf, int len) {
+  int i, got=0;
+  do {
+    if ((i = read(0, buf+got, len-got)) <= 0)
+      return(i);
+    got += i;
+  } while (got<len);
+  return len;
+}
+
+int read_cmd(char *buf) {
+  int len;
+  if (read_exact(buf, 2) != 2)
+    return(-1);
+  len = (buf[0] << 8) | buf[1];
+  return read_exact(buf, len);
+}
+
+int write_exact(const char *buf, int len) {
+  int i, wrote = 0;
+  do {
+    if ((i = write(1, buf+wrote, len-wrote)) <= 0)
+      return (i);
+    wrote += i;
+  } while (wrote<len);
+  return len;
+}
+
+int write_cmd(const char *buf, int len) {
+  char li;
+  li = (len >> 8) & 0xff;
+  write_exact(&li, 1);
+  
+  li = len & 0xff;
+  write_exact(&li, 1);
+  return write_exact(buf, len);
+}
 
 int main (int argc, char *argv[]) {
 
-  while(true) {
-    char buf[1024*1024];
-    size_t nbytes;
-    ssize_t bytes_read;
-    nbytes = sizeof(buf);
-    bytes_read = read(0, buf, nbytes);
-
-    if (bytes_read > 0) {
+  char buf[1024*1024];
+  int json_size;
+  while ((json_size = read_cmd(buf)) > 0) {
         
-      mValue value;
-      // Set 0-delimiter for conversion to string
-      buf[bytes_read] = 0;
-      string json_string = string(buf);
-      read(json_string, value);
+    mValue value;
+    // Set 0-delimiter for conversion to string
+    buf[json_size] = 0;
+    string json_string = string(buf);
+    read(json_string, value);
 
-      if (value.type() == obj_type) {
-        map< string, mValue > objMap = mObject(value.get_obj());
+    if (value.type() == obj_type) {
+      map< string, mValue > objMap = mObject(value.get_obj());
 
-        mValue msgType = objMap["type"];
-        mValue id = objMap["id"];
-        mValue geometry = objMap["geometry"];
+      mValue msgType = objMap["type"];
+      mValue id = objMap["id"];
+      mValue geometry = objMap["geometry"];
 
-        if (!msgType.is_null() && (msgType.type() == str_type) && (msgType.get_str() == string("create"))
-            && 
-            !id.is_null() && (id.type() == str_type)
-            && 
-            !geometry.is_null() && (geometry.type() == obj_type)) {
+      if (!msgType.is_null() && (msgType.type() == str_type) && (msgType.get_str() == string("create"))
+          && 
+          !id.is_null() && (id.type() == str_type)
+          && 
+          !geometry.is_null() && (geometry.type() == obj_type)) {
           
 
-          mValue response = create_geometry(id.get_str(), mObject(geometry.get_obj()));
-          string output = write(response);
-          write(1, output.c_str(), output.size());
-          continue;
-        }
-
+        mValue response = create_geometry(id.get_str(), mObject(geometry.get_obj()));
+        string output = write(response);
+        write_cmd(output.c_str(), output.size());
+        continue;
       }
-        
-      mValue response = mValue("unknown message");
-      string output = write(response);
-      write(1, output.c_str(), output.size());
-        
     }
+        
+    mValue response = mValue("unknown message");
+    string output = write(response);
+    write_cmd(output.c_str(), output.size());
+      
   }
-
-
-  /*TopoDS_Shape bottle = BRepPrimAPI_MakeSphere(1.0).Shape();//MakeBottle(1.0, 1.0, 1.0);
-  BRepMesh().Mesh(bottle, 0.0125);
-
-  TopExp_Explorer Ex; 
-  for (Ex.Init(bottle,TopAbs_FACE); Ex.More(); Ex.Next()) { 
-
-    TopoDS_Face Face = TopoDS::Face(Ex.Current());
-
-    TopLoc_Location Location = TopLoc_Location();
-    
-    Handle(Poly_Triangulation) facing = BRep_Tool().Triangulation(Face,Location);
-    cout << "number of nodes: " << facing->NbTriangles() << "\n";
-
-    for (int i = 1; i <= facing->NbTriangles(); ++i) {
-      Poly_Triangle triangle = facing->Triangles().Value(i);
-      Standard_Integer index1, index2, index3;
-      triangle.Get(index1, index2, index3);
-      //cout << index1 << ":" << index2 << ":" << index3 << "\n";
-
-      gp_Pnt vertex1 = facing->Nodes().Value(index1);
-      cout << vertex1.X() << ":" << vertex1.Y() << ":" << vertex1.Z() << "\n";
-    }
-    
-    }*/
 
   return 0;
 }

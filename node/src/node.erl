@@ -19,7 +19,7 @@ call_port(Msg) ->
 init(ExtPrg) ->
     register(complex, self()),
     process_flag(trap_exit, true),
-    Port = open_port({spawn_executable, ExtPrg}, [stream]),
+    Port = open_port({spawn_executable, ExtPrg}, [{packet, 2}]),
     loop(Port).
 
 loop(Port) ->
