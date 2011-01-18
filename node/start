@@ -1,0 +1,2 @@
+#!/bin/sh
+erl -pa deps/*/ebin ebin -eval "application:start(reloader)." 

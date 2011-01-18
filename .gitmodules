@@ -1,3 +1,0 @@
-[submodule "libBERT"]
-	path = libBERT
-	url = https://github.com/postmodern/libBERT.git

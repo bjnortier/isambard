@@ -19,7 +19,7 @@ call_port(Msg) ->
 init(ExtPrg) ->
     register(complex, self()),
     process_flag(trap_exit, true),
-    Port = open_port({spawn, ExtPrg}, [{packet, 1}]),
+    Port = open_port({spawn_executable, ExtPrg}, [stream]),
     loop(Port).
 
 loop(Port) ->
@@ -40,5 +40,9 @@ loop(Port) ->
 		    exit(normal)
 	    end;
 	{'EXIT', Port, _Reason} ->
-	    exit(port_terminated)
+	    exit(port_terminated);
+        X ->
+            io:format("received: ~p", [X]),
+            loop(Port)
+                
     end.

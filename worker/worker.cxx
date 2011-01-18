@@ -1,10 +1,13 @@
 // A simple program that computes the square root of a number
 #include <stdio.h>
+#include <iostream>
+#include <unistd.h>
 #include <stdlib.h>
 #include <math.h>
 
+
 // OpenCASCADE
-#include <BRep_Tool.hxx>
+/*#include <BRep_Tool.hxx>
 #include <BRepLib.hxx>
 #include <BRepMesh.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
@@ -16,10 +19,13 @@
 #include <TopoDS.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
-#include <Poly_Triangulation.hxx>
+#include <Poly_Triangulation.hxx>*/
+
+// Spirit
+#include "json_spirit.h"
 
 // Project
-#include "TutorialConfig.h"
+#include "WorkerConfig.h"
 
 typedef unsigned char byte;
 
@@ -33,7 +39,7 @@ int read_exact(byte *buf, int len) {
   return(len);
 }
 
-int write_exact(byte *buf, int len) {
+int write_exact(unsigned char *buf, int len) {
   int i, wrote = 0;
   do {
     if ((i = write(1, buf+wrote, len-wrote)) <= 0)
@@ -43,80 +49,38 @@ int write_exact(byte *buf, int len) {
   return (len);
 }
 
-/*int read_cmd(byte *buf) {
-  int len;
-  if (read_exact(buf, 2) != 2)
-    return(-1);
-  len = (buf[0] << 8) | buf[1];
-  return read_exact(buf, len);
-}
-
-int write_cmd(byte *buf, int len) {
-  byte li;
-  li = (len >> 8) & 0xff;
-  write_exact(&li, 1);
-  
-  li = len & 0xff;
-  write_exact(&li, 1);
-  return write_exact(buf, len);
-}*/
-
-int echo() {
-  byte buf[100];
-  while(true) {
-      read_exact(buf, 1);
-      cout << buf[0] << "\n";
-      write_exact(buf, 1);
-    }
-}
-
-/*char *buffer;
-  size_t buffer_length;
-
-  // allocate and fill the buffer
-
-  bert_decoder_t *decoder = bert_decoder_create();
-  bert_decoder_buffer(decoder, buffer, buffer_length);
-
-  bert_data_t *data;
-  int result;
-
-  // decode BERT data
-  if ((result = bert_decoder_pull(decoder, &data)) != 1) {
-    fprintf(stderr,"bert error: %s\n", bert_strerror(result));
-    
-    bert_decoder_destroy(decoder);
-    return -1;
-  }
-  
-  if (data->type != bert_data_tuple) {
-      fprintf(stderr,"BERT data was not a tuple\n");
-
-      bert_data_destroy(data);
-      bert_decoder_destroy(decoder);
-      return -1;
-    }
-
-  printf("BERT tuple decoded with %d elements\n",data->tuple->length);
-
-  bert_data_destroy(data);
-  bert_decoder_destroy(decoder);*/
-
 
 int main (int argc, char *argv[]) {
-  echo();
-  // while (read_cmd(buf) > 0) {
-  //   fn = buf[0];
-  //   arg = buf[1];
-    
-  //   if (fn == 1) {
-  //     res = foo(arg);
-  //   } else if (fn == 2) {
-  //     res = bar(arg);
-  //   }
-  //   buf[0] = res;
-  //   write_cmd(buf, 1);
-  // }
+
+  while(true) {
+    char buf[1024*1024];
+    size_t nbytes;
+    ssize_t bytes_read;
+    nbytes = sizeof(buf);
+    bytes_read = read(0, buf, nbytes);
+
+    if (bytes_read > 0) {
+        
+      json_spirit::Value value;
+      // Set 0-delimiter for conversion to std::string
+      buf[bytes_read] = 0;
+      std::string string = std::string(buf);
+      json_spirit::read(string, value);
+        
+      json_spirit::mArray addr_array;
+      json_spirit::mObject addr_obj;
+        
+      addr_obj[ "type" ] = "cuboid";
+      addr_obj[ "width" ] = 1.0;
+        
+      addr_array.push_back( addr_obj );
+        
+      std::string output = json_spirit::write(addr_array);
+      write(1, output.c_str(), output.size());
+        
+    }
+  }
+
 
   /*TopoDS_Shape bottle = BRepPrimAPI_MakeSphere(1.0).Shape();//MakeBottle(1.0, 1.0, 1.0);
   BRepMesh().Mesh(bottle, 0.0125);
