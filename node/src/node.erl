@@ -7,7 +7,7 @@ start(ExtPrg) ->
 stop() ->
     complex ! stop.
 
-send(X) when is_binary(X) ->
+send(X) ->
     call_port(X).
 
 call_port(Msg) ->
