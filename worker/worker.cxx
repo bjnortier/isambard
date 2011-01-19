@@ -32,7 +32,8 @@ using namespace std;
 using namespace json_spirit;
 
 // TODO: Tesselate in parallel
-// TODO: compress 1.00000000 into 1.0 etc.
+// TODO: compress 1.00000000 into 1.0 etc. Also reduce precision
+
 
 map< string, TopoDS_Shape > shapes = map< string, TopoDS_Shape >();
 
@@ -178,9 +179,9 @@ int read_exact(char *buf, int len) {
 
 int read_cmd(char *buf) {
   int len;
-  if (read_exact(buf, 2) != 2)
+  if (read_exact(buf, 4) != 4)
     return(-1);
-  len = (buf[0] << 8) | buf[1];
+  len = (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
   return read_exact(buf, len);
 }
 
@@ -195,12 +196,14 @@ int write_exact(const char *buf, int len) {
 }
 
 int write_cmd(const char *buf, int len) {
-  char li;
-  li = (len >> 8) & 0xff;
-  write_exact(&li, 1);
-  
-  li = len & 0xff;
-  write_exact(&li, 1);
+  char a = (len >> 24) & 0xff;
+  char b = (len >> 16) & 0xff;
+  char c = (len >> 8) & 0xff;
+  char d = len & 0xff;
+  write_exact(&a, 1);
+  write_exact(&b, 1);
+  write_exact(&c, 1);
+  write_exact(&d, 1);
   return write_exact(buf, len);
 }
 

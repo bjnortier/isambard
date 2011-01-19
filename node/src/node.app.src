@@ -1,11 +1,16 @@
+%%-*- mode: erlang -*-
 {application, node,
  [
-  {description, ""},
+  {description, "node"},
   {vsn, "1"},
+  {modules, []},
   {registered, []},
   {applications, [
                   kernel,
-                  stdlib
+                  stdlib,
+                  crypto,
+                  mochiweb,
+                  webmachine
                  ]},
   {mod, { node_app, []}},
   {env, []}

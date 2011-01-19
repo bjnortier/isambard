@@ -1,48 +1,45 @@
+%% @author author <author@example.com>
+%% @copyright YYYY author.
+
+%% @doc node startup code
+
 -module(node).
--export([start/1, stop/0, init/1]).
--export([send/1]).
+-author('author <author@example.com>').
+-export([start/0, start_link/0, stop/0]).
 
-start(ExtPrg) ->
-    spawn(?MODULE, init, [ExtPrg]).
+ensure_started(App) ->
+    case application:start(App) of
+        ok ->
+            ok;
+        {error, {already_started, App}} ->
+            ok
+    end.
+
+%% @spec start_link() -> {ok,Pid::pid()}
+%% @doc Starts the app for inclusion in a supervisor tree
+start_link() ->
+    ensure_started(crypto),
+    ensure_started(mochiweb),
+    application:set_env(webmachine, webmachine_logger_module, 
+                        webmachine_logger),
+    ensure_started(webmachine),
+    node_sup:start_link().
+
+%% @spec start() -> ok
+%% @doc Start the node server.
+start() ->
+    ensure_started(crypto),
+    ensure_started(mochiweb),
+    application:set_env(webmachine, webmachine_logger_module, 
+                        webmachine_logger),
+    ensure_started(webmachine),
+    application:start(node).
+
+%% @spec stop() -> ok
+%% @doc Stop the node server.
 stop() ->
-    complex ! stop.
-
-send(X) ->
-    call_port(X).
-
-call_port(Msg) ->
-    complex ! {call, self(), Msg},
-    receive
-	{complex, Result} ->
-	    Result
-    end.
-init(ExtPrg) ->
-    register(complex, self()),
-    process_flag(trap_exit, true),
-    Port = open_port({spawn_executable, ExtPrg}, [{packet, 2}]),
-    loop(Port).
-
-loop(Port) ->
-    receive
-	{call, Caller, Msg} ->
-            io:format("SEND: ~p~n", [Msg]),
-	    Port ! {self(), {command, Msg}},
-	    receive
-		{Port, {data, Data}} ->
-                    io:format("RECV: ~p~n", [Data]),
-		    Caller ! {complex, Data}
-	    end,
-	    loop(Port);
-	stop ->
-	    Port ! {self(), close},
-	    receive
-		{Port, closed} ->
-		    exit(normal)
-	    end;
-	{'EXIT', Port, _Reason} ->
-	    exit(port_terminated);
-        X ->
-            io:format("received: ~p", [X]),
-            loop(Port)
-                
-    end.
+    Res = application:stop(node),
+    application:stop(webmachine),
+    application:stop(mochiweb),
+    application:stop(crypto),
+    Res.
