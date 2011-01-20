@@ -53,5 +53,10 @@ init([]) ->
     Web = {webmachine_mochiweb,
            {webmachine_mochiweb, start, [WebConfig]},
            permanent, 5000, worker, dynamic},
-    Processes = [Web],
+
+    NodeWorker = {node_worker_server,
+                  {node_worker_server, start_link, []},
+                  permanent, 5000, worker, dynamic},
+
+    Processes = [Web, NodeWorker],
     {ok, { {one_for_one, 10, 10}, Processes} }.

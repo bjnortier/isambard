@@ -29,7 +29,7 @@ loop(Port) ->
 	    Port ! {self(), {command, Msg}},
 	    receive
 		{Port, {data, Data}} ->
-                    io:format("RECV: ~p~n", [Data]),
+                    %%io:format("RECV: ~p~n", [Data]),
 		    Caller ! {complex, Data}
 	    end,
 	    loop(Port);
@@ -39,7 +39,8 @@ loop(Port) ->
 		{Port, closed} ->
 		    exit(normal)
 	    end;
-	{'EXIT', Port, _Reason} ->
+	{'EXIT', Port, Reason} ->
+            io:format("port terminated: ~p~n", [Reason]),
 	    exit(port_terminated);
         X ->
             io:format("received: ~p", [X]),
