@@ -26,15 +26,7 @@ content_types_provided(ReqData, Context) ->
     {[{"application/json", provide_content}], ReqData, Context}.
 
 provide_content(ReqData, Context) ->
-    %% %% Tesseletion = node_worker:send(mochijson2:encode({struct, [{<<"type">>, <<"create">>}, 
-    %% %%                                                            {<<"id">>, <<"ab23b32b">>}, 
-    %% %%                                                            {<<"geometry">>, {struct, [{<<"type">>, <<"cuboid">>}, 
-    %% %%                                                                                       {<<"width">>, 1.0},
-    %% %%                                                                                       {<<"depth">>, 1.0},
-    %% %%                                                                                       {<<"height">>, 1.0}
-    %% %%                                                                                      ]}
-    %% %%                                                            }]})),
-    Tesselation = node_worker:send(mochijson2:encode({struct, [{<<"type">>, <<"create">>}, 
+    Tesselation = node_worker_server:call(mochijson2:encode({struct, [{<<"type">>, <<"create">>}, 
                                                                {<<"id">>, <<"1kj1h2">>}, 
                                                                {<<"geometry">>, {struct, [{<<"type">>, <<"sphere">>}, 
                                                                                           {<<"radius">>, 1.0}
