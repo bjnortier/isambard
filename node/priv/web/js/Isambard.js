@@ -1,4 +1,8 @@
+var command_stack = new CommandStack();
+var geom_doc = new GeomDocument();
+
 function create_geom_command(parameters) {
+    
     var doFn = function() {
         $.ajax({
             type: "POST",
@@ -11,6 +15,10 @@ function create_geom_command(parameters) {
                     type: "GET",
                     url: path,
                     success: function(nodeData) {
+                        geom_doc.add(new GeomNode({
+                            type: parameters.type,
+                            path: path,
+                            parameters: parameters}));
                         /* FIXME: The picking doesn't seem to work unless there is an 
                            extra node above the geometry node? */
                         nodeData['type'] = 'geometry';
@@ -30,33 +38,32 @@ function create_geom_command(parameters) {
         });
     };
     var undoFn = function() {
-        
-    };
-    var cmd = new Command(doFn, undoFn);
+        throw Error("not implemented");
+    }
+    return new Command(doFn, undoFn);
 }
 
 
-function GeomNode() {
+function GeomDocumentRenderer() {
+    this.update = function() {
 
-    if (!arguments[0].type) {
-        throw new Error("type is not defined");
-    }
+        $('#geom-model-doc').html('');
+        var geomNodeRenderer = function(geomNode) {
+            var nodeTable = $('<table>');
+            var typeRow = $('<tr>').append('<td>' + geomNode.type + '</td>');
 
-    this.type = arguments[0].type;
-    this.parameters = arguments[0].parameters;
-    this.parent = undefined;
+            nodeTable.append(typeRow);
 
-    this.children = [];
-    for (var i = 1; i < arguments.length; ++i) {
-        arguments[i].parent = this;
-        this.children.push(arguments[i]);
+
+            $('#geom-model-doc').append(nodeTable);
+        }
+        geom_doc.iterate(geomNodeRenderer);
     }
-    
-    this.json = function() {
-        // No need to do somethign special with parameters if they are not 
-        // defined, as JSON.stringigy simply ignores those fields
-        return JSON.stringify({type: this.type,
-                               parameters: this.parameters});
-    }
-    
 }
+
+var geom_doc_renderer = new GeomDocumentRenderer();
+
+geom_doc.addListener(function(event) {
+    geom_doc_renderer.update();
+});
+

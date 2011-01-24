@@ -25,6 +25,7 @@ function Action(label, iconPath, parameters, okFn) {
 
 function delete_geom() {
     for (i in Interaction.selected) {
+        geom_document.removeByPath(Interaction.selected[i]);
         SceneJS.withNode(Interaction.selected[i]).parent().remove({node: Interaction.selected[i]});
     }
     Interaction.unselect();
@@ -38,35 +39,8 @@ function create_primitive(parameters, type) {
 
 
 function create_geom(parameters) {
-
-    $.ajax({
-        type: "POST",
-        url: "/geom/",
-        contentType: "application/json",
-        data: JSON.stringify(parameters),
-        success: function(nodeData){
-            var path = nodeData.path;
-            $.ajax({
-                type: "GET",
-                url: path,
-                success: function(nodeData) {
-                    /* FIXME: The picking doesn't seem to work unless there is an 
-                       extra node above the geometry node? */
-                    nodeData['type'] = 'geometry';
-                    SceneJS.withNode("geom").add("node", {type: "material",
-                                                          id: path,
-                                                          emit: 0,
-                                                          baseColor:      { r: 0.5, g: 1.0, b: 0.0 },
-                                                          specularColor:  { r: 0.9, g: 0.9, b: 0.9 },
-                                                          specular:       0.9,
-                                                          shine:          100.0,
-                                                          nodes: [nodeData]});
-
-                    Interaction.pickable(path);
-                }
-            });
-        }
-    });
+    var cmd = create_geom_command(parameters);
+    command_stack.execute(cmd);
 }
 
 
