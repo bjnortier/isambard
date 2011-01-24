@@ -1,3 +1,7 @@
+%% TODO: Need error return design for the worker, e.g. when there is a problem
+%% with the request. E.g. {"error" : <reason>}
+
+
 -module(node_worker_server).
 -behaviour(gen_server).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -32,12 +36,10 @@ handle_call(stop, _From, State) ->
     Reply = stopped,
     {stop, Reason, Reply, State};
 handle_call({call, Msg}, _From, State) ->
-    io:format("SEND: ~p~n", [Msg]),
     Port = State#state.port,
     Port ! {self(), {command, Msg}},
     Reply = receive
                 {Port, {data, Data}} ->
-                    io:format("RECV: ~p~n", [Data]),
                     Data
             end,
     {reply, Reply, State};

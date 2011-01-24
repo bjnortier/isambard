@@ -54,9 +54,14 @@ init([]) ->
            {webmachine_mochiweb, start, [WebConfig]},
            permanent, 5000, worker, dynamic},
 
-    NodeWorker = {node_worker_server,
+    DocDb = {node_document_db,
+             {node_document_db, start_link, []},
+             permanent, 5000, worker, dynamic},
+
+
+    WorkerServer = {node_worker_server,
                   {node_worker_server, start_link, []},
                   permanent, 5000, worker, dynamic},
 
-    Processes = [Web, NodeWorker],
+    Processes = [Web, DocDb, WorkerServer],
     {ok, { {one_for_one, 10, 10}, Processes} }.

@@ -52,6 +52,7 @@ function create_geom(parameters) {
                 success: function(nodeData) {
                     /* FIXME: The picking doesn't seem to work unless there is an 
                        extra node above the geometry node? */
+                    nodeData['type'] = 'geometry';
                     SceneJS.withNode("geom").add("node", {type: "material",
                                                           id: path,
                                                           emit: 0,

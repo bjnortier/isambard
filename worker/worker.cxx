@@ -119,8 +119,6 @@ mValue tesselate(string id) {
   }
 
   mObject result;
-  result["type"] = "geometry";
-  result["id"] = id;
   result["primitive"] = "triangles";
   result["positions"] = positions;
   result["normals"] = normalArr;
@@ -129,10 +127,19 @@ mValue tesselate(string id) {
   return result;
 }
 
+double get_double(mValue value) {
+  if (value.type() == int_type) {
+    return (double)value.get_int();
+  } else {
+
+    return value.get_real();
+  }
+}
+
 mValue create_sphere(string id, map< string, mValue > geometry) {
   mValue radius = geometry["radius"];
-  if (!radius.is_null() && (radius.type() == real_type)) {
-    TopoDS_Shape shape = BRepPrimAPI_MakeSphere(radius.get_real()).Shape();
+  if (!radius.is_null() && ((radius.type() == real_type) || (radius.type() == int_type))) {
+    TopoDS_Shape shape = BRepPrimAPI_MakeSphere(get_double(radius)).Shape();
     shapes[id] = shape;
     return tesselate(id);
   }
@@ -143,13 +150,15 @@ mValue create_cuboid(string id, map< string, mValue > geometry) {
   mValue width = geometry["width"];
   mValue depth = geometry["depth"];
   mValue height = geometry["height"];
-  if (!width.is_null() && (width.type() == real_type)
+  if (!width.is_null() && ((width.type() == real_type) || (width.type() == int_type))
       &&
-      !depth.is_null() && (depth.type() == real_type)
+      !depth.is_null() && ((depth.type() == real_type) || (depth.type() == int_type))
       &&
-      !height.is_null() && (height.type() == real_type)) {
-
-    TopoDS_Shape shape = BRepPrimAPI_MakeBox(width.get_real(), depth.get_real(), height.get_real()).Shape();
+      !height.is_null() && ((height.type() == real_type) || (height.type() == int_type))) {
+    
+    TopoDS_Shape shape = BRepPrimAPI_MakeBox(get_double(width), 
+                                             get_double(depth), 
+                                             get_double(height)).Shape();
     shapes[id] = shape;
     return tesselate(id);
   }
