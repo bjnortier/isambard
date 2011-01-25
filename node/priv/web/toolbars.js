@@ -237,8 +237,8 @@ $(document).ready(function() {
      */
     new Action('union', 'images/union.png', 
                function(parameters) { boolean("union"); }).render($('#boolean'));
-    new Action('difference', 'images/diff.png', 
-               function(parameters) { boolean("diff"); }).render($('#boolean'));
+    new Action('subtract', 'images/diff.png', 
+               function(parameters) { boolean("subtract"); }).render($('#boolean'));
     new Action('intersect', 'images/intersect.png', 
                function(parameters) { boolean("intersect"); }).render($('#boolean'));
     

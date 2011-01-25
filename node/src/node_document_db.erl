@@ -90,21 +90,26 @@ uuid() ->
     to_hex(crypto:rand_bytes(16)).
 
 create_type(Id, <<"union">>, Geometry) ->
+    create_boolean(Id, <<"union">>, Geometry);
+create_type(Id, <<"subtract">>, Geometry) ->
+    create_boolean(Id, <<"subtract">>, Geometry);
+create_type(Id, <<"intersect">>, Geometry) ->
+    create_boolean(Id, <<"intersect">>, Geometry);
+%% Non-bool pass through
+create_type(Id, _, Geometry) ->
+    worker_create(Id, Geometry).
+
+create_boolean(Id, Type, Geometry) ->
     {struct, GeomProps} = Geometry,
     {<<"parameters">>, {struct, ParamProps}} = lists:keyfind(<<"parameters">>, 1, GeomProps),
     {<<"a">>, PathA} = lists:keyfind(<<"a">>, 1, ParamProps),
     {<<"b">>, PathB} = lists:keyfind(<<"b">>, 1, ParamProps),
     "/geom/" ++ IdA = binary_to_list(PathA),
     "/geom/" ++ IdB = binary_to_list(PathB),
-    worker_create(Id, {struct, [{<<"type">>, <<"union">>},
+    worker_create(Id, {struct, [{<<"type">>, Type},
                                 {<<"parameters">>, {struct,
                                                     [{<<"a">>, list_to_binary(IdA)},                                
-                                                     {<<"b">>, list_to_binary(IdB)}]}}]});
-
-%% Non-bool pass through
-create_type(Id, _, Geometry) ->
-    worker_create(Id, Geometry).
-    
+                                                     {<<"b">>, list_to_binary(IdB)}]}}]}).
 worker_create(Id, Geometry) ->
     Msg = {struct, [{<<"type">>, <<"create">>},
                     {<<"id">>, list_to_binary(Id)},

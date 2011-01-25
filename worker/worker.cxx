@@ -18,6 +18,9 @@
 #include <BRepPrimAPI_MakeWedge.hxx>
 #include <BRepPrimAPI_MakeTorus.hxx>
 #include <BRepAlgoAPI_Fuse.hxx>
+#include <BRepAlgoAPI_Cut.hxx>
+#include <BRepAlgoAPI_Common.hxx>
+
 
 #include <gp.hxx>
 #include <gp_Pnt.hxx>
@@ -259,11 +262,50 @@ mValue create_union(string id, map< string, mValue > geometry) {
         TopoDS_Shape shape_a = shapes[path_a];
         TopoDS_Shape shape_b = shapes[path_b];
         
+        
         TopoDS_Shape union_shape = BRepAlgoAPI_Fuse(shape_a, shape_b).Shape();
         shapes[id] = union_shape;
         return tesselate(id);
     }
-    return mValue("invalid boolean parameters");
+    return mValue("invalid union parameters");
+}
+
+mValue create_subtract(string id, map< string, mValue > geometry) {
+    map< string, mValue > parameters = geometry["parameters"].get_obj();
+    if ((parameters["a"].type() == str_type)
+        &&
+        (parameters["b"].type() == str_type)) {
+        string path_a = parameters["a"].get_str();
+        string path_b = parameters["b"].get_str();
+        
+        TopoDS_Shape shape_a = shapes[path_a];
+        TopoDS_Shape shape_b = shapes[path_b];
+        
+        // It makes more sense to when selecting 'subtract A FROM B'
+        TopoDS_Shape union_shape = BRepAlgoAPI_Cut(shape_b, shape_a).Shape();
+        shapes[id] = union_shape;
+        return tesselate(id);
+    }
+    return mValue("invalid union parameters");
+}
+
+mValue create_intersect(string id, map< string, mValue > geometry) {
+    map< string, mValue > parameters = geometry["parameters"].get_obj();
+    if ((parameters["a"].type() == str_type)
+        &&
+        (parameters["b"].type() == str_type)) {
+        string path_a = parameters["a"].get_str();
+        string path_b = parameters["b"].get_str();
+        
+        TopoDS_Shape shape_a = shapes[path_a];
+        TopoDS_Shape shape_b = shapes[path_b];
+        
+        
+        TopoDS_Shape union_shape = BRepAlgoAPI_Common(shape_a, shape_b).Shape();
+        shapes[id] = union_shape;
+        return tesselate(id);
+    }
+    return mValue("invalid union parameters");
 }
 
 
@@ -295,6 +337,12 @@ mValue create_geometry(string id, map< string, mValue > geometry) {
      */
     if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("union"))) {
         return create_union(id, geometry);
+    }
+    if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("subtract"))) {
+        return create_subtract(id, geometry);
+    }
+    if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("intersect"))) {
+        return create_intersect(id, geometry);
     }
     return mValue("geometry type not found");
 }
