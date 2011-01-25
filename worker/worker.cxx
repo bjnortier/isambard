@@ -137,19 +137,21 @@ double get_double(mValue value) {
 }
 
 mValue create_sphere(string id, map< string, mValue > geometry) {
-  mValue radius = geometry["radius"];
+  map< string, mValue > parameters = geometry["parameters"].get_obj();
+  mValue radius = parameters["radius"];
   if (!radius.is_null() && ((radius.type() == real_type) || (radius.type() == int_type))) {
     TopoDS_Shape shape = BRepPrimAPI_MakeSphere(get_double(radius)).Shape();
     shapes[id] = shape;
     return tesselate(id);
   }
-  return  mValue("invalid geometry parameters");;
+  return  mValue("invalid geometry parameters");
 }
 
 mValue create_cuboid(string id, map< string, mValue > geometry) {
-  mValue width = geometry["width"];
-  mValue depth = geometry["depth"];
-  mValue height = geometry["height"];
+  map< string, mValue > parameters = geometry["parameters"].get_obj();
+  mValue width = parameters["width"];
+  mValue depth = parameters["depth"];
+  mValue height = parameters["height"];
   if (!width.is_null() && ((width.type() == real_type) || (width.type() == int_type))
       &&
       !depth.is_null() && ((depth.type() == real_type) || (depth.type() == int_type))
@@ -162,7 +164,7 @@ mValue create_cuboid(string id, map< string, mValue > geometry) {
     shapes[id] = shape;
     return tesselate(id);
   }
-  return  mValue("invalid geometry parameters");;
+  return  mValue("invalid geometry parameters");
 }
 
 mValue create_geometry(string id, map< string, mValue > geometry) {
@@ -176,7 +178,7 @@ mValue create_geometry(string id, map< string, mValue > geometry) {
   return mValue("geometry type not found");
 }
 
-int read_exact(char *buf, int len) {
+int read_exact(unsigned char *buf, int len) {
   int i, got=0;
   do {
     if ((i = read(0, buf+got, len-got)) <= 0)
@@ -186,7 +188,7 @@ int read_exact(char *buf, int len) {
   return len;
 }
 
-int read_cmd(char *buf) {
+int read_cmd(unsigned char* buf) {
   int len;
   if (read_exact(buf, 4) != 4)
     return(-1);
@@ -205,53 +207,76 @@ int write_exact(const char *buf, int len) {
 }
 
 int write_cmd(const char *buf, int len) {
-  char a = (len >> 24) & 0xff;
-  char b = (len >> 16) & 0xff;
-  char c = (len >> 8) & 0xff;
-  char d = len & 0xff;
-  write_exact(&a, 1);
-  write_exact(&b, 1);
-  write_exact(&c, 1);
-  write_exact(&d, 1);
+  char size_buf[4];
+  size_buf[0] = (len >> 24) & 0xff;
+  size_buf[1] = (len >> 16) & 0xff;
+  size_buf[2] = (len >> 8) & 0xff;
+  size_buf[3] = len & 0xff;
+  write_exact(size_buf, 4);
   return write_exact(buf, len);
 }
 
 int main (int argc, char *argv[]) {
 
-  char buf[1024*1024];
+  unsigned char buf[1024*1024];
   int json_size;
+
+  unsigned char size_buf[4];
+  /*while ((json_size = read(0, size_buf,4)) > 0) {
+
+    mObject result;
+    result["0"] = mValue(size_buf[0]);
+    result["1"] = mValue(size_buf[1]);
+    result["2"] = mValue(size_buf[2]);
+    result["3"] = mValue(size_buf[3]);
+
+    int len = (size_buf[0] << 24) | (size_buf[1] << 16) | (size_buf[2] << 8) | size_buf[3];
+
+    result["len"] = mValue(len);
+
+    string output = write(result);
+    write_cmd(output.c_str(), output.size());*/
+
+    
   while ((json_size = read_cmd(buf)) > 0) {
         
-    mValue value;
-    // Set 0-delimiter for conversion to string
-    buf[json_size] = 0;
-    string json_string = string(buf);
-    read(json_string, value);
+    try {
+      mValue value;
+      // Set 0-delimiter for conversion to string
+      buf[json_size] = 0;
+      string json_string = string((char*)buf);
+      read(json_string, value);
 
-    if (value.type() == obj_type) {
-      map< string, mValue > objMap = mObject(value.get_obj());
+      if (value.type() == obj_type) {
+        map< string, mValue > objMap = mObject(value.get_obj());
 
-      mValue msgType = objMap["type"];
-      mValue id = objMap["id"];
-      mValue geometry = objMap["geometry"];
+        mValue msgType = objMap["type"];
+        mValue id = objMap["id"];
+        mValue geometry = objMap["geometry"];
 
-      if (!msgType.is_null() && (msgType.type() == str_type) && (msgType.get_str() == string("create"))
-          && 
-          !id.is_null() && (id.type() == str_type)
-          && 
-          !geometry.is_null() && (geometry.type() == obj_type)) {
+        if (!msgType.is_null() && (msgType.type() == str_type) && (msgType.get_str() == string("create"))
+            && 
+            !id.is_null() && (id.type() == str_type)
+            && 
+            !geometry.is_null() && (geometry.type() == obj_type)) {
           
 
-        mValue response = create_geometry(id.get_str(), mObject(geometry.get_obj()));
-        string output = write(response);
-        write_cmd(output.c_str(), output.size());
-        continue;
+          mValue response = create_geometry(id.get_str(), mObject(geometry.get_obj()));
+          string output = write(response);
+          write_cmd(output.c_str(), output.size());
+          continue;
+        }
       }
-    }
         
-    mValue response = mValue("unknown message");
-    string output = write(response);
-    write_cmd(output.c_str(), output.size());
+      mValue response = mValue("unknown message");
+      string output = write(response);
+      write_cmd(output.c_str(), output.size());
+    } catch (...) {
+      mValue response = mValue("exception!");
+      string output = write(response);
+      write_cmd(output.c_str(), output.size());
+
+    }
       
   }
 

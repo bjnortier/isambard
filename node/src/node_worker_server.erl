@@ -16,8 +16,17 @@ start_link() ->
 stop() ->
     gen_server:call(?MODULE, stop).
 
-call(Msg) ->
-    gen_server:call(?MODULE, {call, Msg}).
+call(Msg) when is_list(Msg) andalso length(Msg) > 0 ->
+    gen_server:call(?MODULE, {call, Msg});
+call(Msg) when is_list(Msg)  ->
+    empty_msg;
+call(Msg) when is_binary(Msg) andalso size(Msg) > 0 ->
+    gen_server:call(?MODULE, {call, Msg});
+call(Msg) when is_binary(Msg) ->
+    empty_msg;
+call(_Msg) ->
+    msg_must_be_a_list_or_binary.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                              gen_server                                  %%%
@@ -36,13 +45,17 @@ handle_call(stop, _From, State) ->
     Reply = stopped,
     {stop, Reason, Reply, State};
 handle_call({call, Msg}, _From, State) ->
+    io:format("SEND: ~p~n", [Msg]),
     Port = State#state.port,
     Port ! {self(), {command, Msg}},
-    Reply = receive
-                {Port, {data, Data}} ->
-                    Data
-            end,
-    {reply, Reply, State};
+    receive
+        {Port, {data, Data}} ->
+            {reply, Data, State};
+        {'EXIT', Port, Reason} ->
+            {stop, {error, Reason}, State}
+    after 5000 ->
+            {reply, {error, timeout}, State}
+    end;
 handle_call(Request, _From, State) ->
     io:format("UNKNOWN node_worker_server:handle_call(~p)~n", [Request]),
     {reply, ok, State}.
@@ -65,6 +78,8 @@ terminate(Reason, State) ->
             ok;
         X ->
             throw(X)
+    after 10000 ->
+            throw(no_close_received)
     end.
 
 code_change(_OldVsn, State, _Extra) ->
