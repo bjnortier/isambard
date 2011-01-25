@@ -34,49 +34,62 @@ function create_geom_command(prototype, geometry) {
     return new Command(doFn, undoFn);
 }
 
+function renderNode(geomNode) {
+    // Params
+    var paramsArr = [];
+    for (key in geomNode.parameters) {
+        paramsArr.push({key: key,
+                        value: geomNode.parameters[key],
+                        prototype: geomNode.prototype
+                       });
+    }
+    var template = '<table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^prototype}}{{value}}{{/prototype}}{{#prototype}}<input id="{{key}}" type="text">{{/prototype}}</td></tr>{{/paramsArr}}</table>';
+    var paramsTable = $.mustache(template, {paramsArr : paramsArr});
+    
+    // Children
+    var childTables = geomNode.children.map(renderNode);
+    
+    
+    var template = '<table><tr><td>{{type}}</td></tr><tr><td>{{{paramsTable}}}</td></tr>{{#prototype}}<tr><td><input id="modal-ok" type="submit" value="Ok"/><input id="modal-cancel" type="submit" value="Cancel"/></td></tr>{{/prototype}}{{#children}}<tr><td>{{{.}}}</td></td>{{/children}}</table>';
+    var view = {type: geomNode.type,
+                prototype: geomNode.prototype,
+                paramsTable: paramsTable,
+                children: childTables
+               };
+    var nodeTable = $.mustache(template, view);
+    return nodeTable;
+}
+
 
 function GeomDocumentRenderer() {
-    this.update = function() {
-
-        $('#geom-model-doc').html('');
-        var geomNodeRenderer = function(geomNode) {
-
-            var paramsArr = [];
-            for (key in geomNode.parameters) {
-                paramsArr.push({key: key,
-                                value: geomNode.parameters[key],
-                                prototype: geomNode.prototype
-                               });
-            }
-            var template = '<table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^prototype}}{{value}}{{/prototype}}{{#prototype}}<input id="{{key}}" type="text">{{/prototype}}</td></tr>{{/paramsArr}}</table>';
-            var paramsTable = $.mustache(template, {paramsArr : paramsArr});
-            
-            var template = '<table><tr><td>{{type}}</td></tr><tr><td>{{{paramsTable}}}</td></tr>{{#prototype}}<tr><td><input id="modal-ok" type="submit" value="Ok"/><input id="modal-cancel" type="submit" value="Cancel"/></td></tr>{{/prototype}}</table>';
-            var view = {type: geomNode.type,
-                        prototype: geomNode.prototype,
-                        paramsTable: paramsTable};
-            var nodeTable = $.mustache(template, view);
-
-            $('#geom-model-doc').append(nodeTable);
-
-            $('#modal-ok').click(function() {
-                if (geomNode.prototype) {
-                    var parameters = {};
-                    for (key in geomNode.parameters) {
-                        parameters[key] = parseFloat($('#' + key).val());
-                    }
-                    var cmd = create_geom_command(geomNode, {type: geomNode.type,
-                                                             parameters: parameters});
-                    command_stack.execute(cmd);
-                }
-            });
-            $('#modal-cancel').click(function() {
-                geom_doc.remove(geomNode);
-            });
-        }
-        geom_doc.iterate(geomNodeRenderer);
-    }
 }
+
+
+GeomDocumentRenderer.prototype.update = function() {
+
+    $('#geom-model-doc').html('');
+    var geomNodeRenderer = function(geomNode) {
+
+        var nodeTable = renderNode(geomNode);
+        $('#geom-model-doc').append(nodeTable);
+        $('#modal-ok').click(function() {
+            if (geomNode.prototype) {
+                var parameters = {};
+                for (key in geomNode.parameters) {
+                    parameters[key] = parseFloat($('#' + key).val());
+                }
+                var cmd = create_geom_command(geomNode, {type: geomNode.type,
+                                                         parameters: parameters});
+                command_stack.execute(cmd);
+            }
+        });
+        $('#modal-cancel').click(function() {
+            geom_doc.remove(geomNode);
+        });
+    };
+
+    geom_doc.iterate(geomNodeRenderer);
+};
 
 var geom_doc_renderer = new GeomDocumentRenderer();
 
