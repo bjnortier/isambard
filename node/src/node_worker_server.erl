@@ -35,7 +35,7 @@ call(_Msg) ->
 -record(state, {port}).
 
 init([]) ->
-    ExtPrg = "../worker/build/worker",
+    ExtPrg = "../worker/xcode/Debug/worker",
     process_flag(trap_exit, true),
     Port = open_port({spawn_executable, ExtPrg}, [{packet, 4}]),
     {ok, #state{port = Port}}.
@@ -45,7 +45,6 @@ handle_call(stop, _From, State) ->
     Reply = stopped,
     {stop, Reason, Reply, State};
 handle_call({call, Msg}, _From, State) ->
-    io:format("SEND: ~p~n", [Msg]),
     Port = State#state.port,
     Port ! {self(), {command, Msg}},
     receive

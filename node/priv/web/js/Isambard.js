@@ -14,25 +14,15 @@ function create_geom_command(prototype, geometry) {
                 $.ajax({
                     type: "GET",
                     url: path,
-                    success: function(nodeData) {
+                    success: function(tesselation) {
                         geom_doc.remove(prototype);
                         geom_doc.add(new GeomNode({
                             type: geometry.type,
                             path: path,
                             parameters: geometry.parameters}));
-                        /* FIXME: The picking doesn't seem to work unless there is an 
-                           extra node above the geometry node? */
-                        nodeData['type'] = 'geometry';
-                        SceneJS.withNode("geom").add("node", {type: "material",
-                                                              id: path,
-                                                              emit: 0,
-                                                              baseColor:      { r: 0.5, g: 1.0, b: 0.0 },
-                                                              specularColor:  { r: 0.9, g: 0.9, b: 0.9 },
-                                                              specular:       0.9,
-                                                              shine:          100.0,
-                                                              nodes: [nodeData]});
 
-                        Interaction.pickable(path);
+                        add_to_scene(path, tesselation);
+
                     }
                 });
             }

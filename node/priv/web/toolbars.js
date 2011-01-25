@@ -19,7 +19,7 @@ function Action(label, iconPath, fn) {
 
 function delete_geom() {
     for (i in Interaction.selected) {
-        geom_docu.removeByPath(Interaction.selected[i]);
+        geom_doc.removeByPath(Interaction.selected[i]);
         SceneJS.withNode(Interaction.selected[i]).parent().remove({node: Interaction.selected[i]});
     }
     Interaction.unselect();
@@ -37,46 +37,65 @@ function create_primitive(type, parameters) {
         parameters: geometryParams}));
 }
 
+function add_to_scene(path, tesselation) {
+    tesselation['type'] = 'geometry';
+    SceneJS.withNode("geom").add("node", {type: "material",
+                                          id: path,
+                                          emit: 0,
+                                          baseColor:      { r: 0.5, g: 1.0, b: 0.0 },
+                                          specularColor:  { r: 0.9, g: 0.9, b: 0.9 },
+                                          specular:       0.9,
+                                          shine:          100.0,
+                                          nodes: [tesselation]});
+    Interaction.pickable(path);
+}
+
 
 function boolean(type) {
     if (Interaction.selected.length != 2)  {
-        alert('must have 2 object Interaction.selected!');
+        alert("must have 2 object Interaction.selected!");
         return;
     }
-    $.ajax({
-        type: "POST",
-        url: "/geom/",
-        contentType: "application/json",
-        data: JSON.stringify({type: type,
-                              a: Interaction.selected[0],
-                              b: Interaction.selected[1]
-                             }),
-        success: function(nodeData){
-            var path = nodeData.path;
-            $.ajax({
-                type: "GET",
-                url: path,
-                success: function(nodeData) {
-                    SceneJS.withNode(Interaction.selected[0]).parent().remove({node: Interaction.selected[0]});
-                    SceneJS.withNode(Interaction.selected[1]).parent().remove({node: Interaction.selected[1]});
-                    Interaction.unselect();
+    var doFn = function() {
+        var geometry = {type: type,
+                        parameters: {
+                            a: Interaction.selected[0],
+                            b: Interaction.selected[1]
+                        }};
+        
+        $.ajax({
+            type: "POST",
+            url: "/geom/",
+            contentType: "application/json",
+            data: JSON.stringify(geometry),
+            success: function(nodeData){
+                var path = nodeData.path;
+                $.ajax({
+                    type: "GET",
+                    url: path,
+                    success: function(tesselation) {
+                        var node1 = geom_doc.findByPath(Interaction.selected[0]);
+                        var node2 = geom_doc.findByPath(Interaction.selected[1]);
+                        geom_doc.remove(node1);
+                        geom_doc.remove(node2);
+                        geometry['path'] = path;
+                        var boolNode = new GeomNode(geometry, node1, node2);
+                        geom_doc.add(boolNode);
 
-                    /* FIXME: The picking doesn't seem to work unless there is an 
-                       extra node above the geometry node? */
-                    SceneJS.withNode("geom").add("node", {type: "material",
-                                                          id: path,
-                                                          emit: 0,
-                                                          baseColor:      { r: 0.5, g: 1.0, b: 0.0 },
-                                                          specularColor:  { r: 0.9, g: 0.9, b: 0.9 },
-                                                          specular:       0.9,
-                                                          shine:          100.0,
-                                                          nodes: [nodeData]});
-                    Interaction.pickable(path);
-
-                }
-            });
-        }
-    });
+                        SceneJS.withNode(Interaction.selected[0]).parent().remove({node: Interaction.selected[0]});
+                        SceneJS.withNode(Interaction.selected[1]).parent().remove({node: Interaction.selected[1]});
+                        Interaction.unselect();
+                        
+                        add_to_scene(path, tesselation);
+                    }
+                });
+            }
+        })};
+    var undoFn = function() {
+        throw Error("not implemented");
+    }
+    var cmd = new Command(doFn, undoFn);
+    command_stack.execute(cmd);
 }
 
 function transform(parameters, type) {
@@ -216,15 +235,12 @@ $(document).ready(function() {
     /*
      * Booleans
      */
-    /*new Action('union', 'images/union.png', 
-               [],
+    new Action('union', 'images/union.png', 
                function(parameters) { boolean("union"); }).render($('#boolean'));
     new Action('difference', 'images/diff.png', 
-               [],
                function(parameters) { boolean("diff"); }).render($('#boolean'));
     new Action('intersect', 'images/intersect.png', 
-               [],
-               function(parameters) { boolean("intersect"); }).render($('#boolean'));*/
+               function(parameters) { boolean("intersect"); }).render($('#boolean'));
     
     /*
      * Transformations

@@ -39,14 +39,10 @@ handle_call({raw_geom_record, Id}, _From, State) ->
     {reply, Reply, State};
     
 handle_call({create, Geometry}, _From, State) ->
-    %% JSOBJ in the form {struct, [{<<"radius">>, 1.0}]} for a sphere
-    %% for example
+    {struct, GeomProps} = Geometry,
+    {<<"type">>, GeomType} = lists:keyfind(<<"type">>, 1, GeomProps),
     Id = uuid(),
-    Msg = {struct, [{<<"type">>, <<"create">>},
-                    {<<"id">>, list_to_binary(Id)},
-                    {<<"geometry">>, Geometry}
-                   ]},
-    Tesselation = node_worker_server:call(mochijson2:encode(Msg)),
+    Tesselation = create_type(Id, GeomType, Geometry),
     {reply, Id, [{Id, #geom_doc{ geometry = Geometry,
                                  tesselation = Tesselation }}|State]};
 
@@ -92,4 +88,27 @@ to_hex([H|T]) ->
 
 uuid() ->
     to_hex(crypto:rand_bytes(16)).
+
+create_type(Id, <<"union">>, Geometry) ->
+    {struct, GeomProps} = Geometry,
+    {<<"parameters">>, {struct, ParamProps}} = lists:keyfind(<<"parameters">>, 1, GeomProps),
+    {<<"a">>, PathA} = lists:keyfind(<<"a">>, 1, ParamProps),
+    {<<"b">>, PathB} = lists:keyfind(<<"b">>, 1, ParamProps),
+    "/geom/" ++ IdA = binary_to_list(PathA),
+    "/geom/" ++ IdB = binary_to_list(PathB),
+    worker_create(Id, {struct, [{<<"type">>, <<"union">>},
+                                {<<"parameters">>, {struct,
+                                                    [{<<"a">>, list_to_binary(IdA)},                                
+                                                     {<<"b">>, list_to_binary(IdB)}]}}]});
+
+%% Non-bool pass through
+create_type(Id, _, Geometry) ->
+    worker_create(Id, Geometry).
+    
+worker_create(Id, Geometry) ->
+    Msg = {struct, [{<<"type">>, <<"create">>},
+                    {<<"id">>, list_to_binary(Id)},
+                    {<<"geometry">>, Geometry}
+                   ]},
+    node_worker_server:call(mochijson2:encode(Msg)).
 

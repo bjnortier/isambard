@@ -1,3 +1,4 @@
+
 // A simple program that computes the square root of a number
 #include <stdio.h>
 #include <iostream>
@@ -16,6 +17,7 @@
 #include <BRepPrimAPI_MakeCone.hxx>
 #include <BRepPrimAPI_MakeWedge.hxx>
 #include <BRepPrimAPI_MakeTorus.hxx>
+#include <BRepAlgoAPI_Fuse.hxx>
 
 #include <gp.hxx>
 #include <gp_Pnt.hxx>
@@ -41,320 +43,352 @@ using namespace json_spirit;
 map< string, TopoDS_Shape > shapes = map< string, TopoDS_Shape >();
 
 mValue tesselate(string id) {
-  TopoDS_Shape shape = shapes[id];
-  BRepMesh().Mesh(shape, 0.0125);
-
-  mArray vertex_array;
-  mArray indices;
-  mArray positions;
-  mArray normalArr;
-
-  map< int, gp_Vec > normals = map< int, gp_Vec >();
-  map< int, vector< int > > connected_triangles = map< int, vector< int > >();
-
-  TopExp_Explorer Ex; 
-  int index_offset = 0;
-  for (Ex.Init(shape,TopAbs_FACE); Ex.More(); Ex.Next()) { 
-
-    TopoDS_Face Face = TopoDS::Face(Ex.Current());
-    TopLoc_Location Location = TopLoc_Location();
-    Handle(Poly_Triangulation) facing = BRep_Tool().Triangulation(Face,Location);
-
-    for (int i = 1; i <= facing->NbTriangles(); ++i) {
-      Poly_Triangle triangle = facing->Triangles().Value(i);
-      Standard_Integer index1, index2, index3;
-      triangle.Get(index1, index2, index3);
-
-      // Step 1 - caluclate the normals of the triangles
-      gp_Pnt vertex1 = facing->Nodes().Value(index1);
-      gp_Pnt vertex2 = facing->Nodes().Value(index2);
-      gp_Pnt vertex3 = facing->Nodes().Value(index3);
-
-      gp_Vec vec12 = gp_Vec(vertex1, vertex2);
-      gp_Vec vec23 = gp_Vec(vertex2, vertex3);
-
-
-      gp_Vec cross_product = vec12.Crossed(vec23);
-
-      double cross_magnitude = cross_product.Magnitude();
-      if (cross_magnitude > 0) {
-        gp_Vec normal = cross_product.Normalized();
-        normals[i] = normal;
-      }
-
-      // Step 2 - created connected lookup
-      connected_triangles[index1].push_back(i);
-      connected_triangles[index2].push_back(i);
-      connected_triangles[index3].push_back(i);
-
-      indices.push_back(index1 - 1 + index_offset);
-      indices.push_back(index2 - 1 + index_offset);
-      indices.push_back(index3 - 1 + index_offset);
+    TopoDS_Shape shape = shapes[id];
+    BRepMesh().Mesh(shape, 0.0125);
+    
+    mArray vertex_array;
+    mArray indices;
+    mArray positions;
+    mArray normalArr;
+    
+    map< int, gp_Vec > normals = map< int, gp_Vec >();
+    map< int, vector< int > > connected_triangles = map< int, vector< int > >();
+    
+    TopExp_Explorer Ex; 
+    int index_offset = 0;
+    for (Ex.Init(shape,TopAbs_FACE); Ex.More(); Ex.Next()) { 
+        
+        TopoDS_Face Face = TopoDS::Face(Ex.Current());
+        TopLoc_Location Location = TopLoc_Location();
+        Handle(Poly_Triangulation) facing = BRep_Tool().Triangulation(Face,Location);
+        
+        for (int i = 1; i <= facing->NbTriangles(); ++i) {
+            Poly_Triangle triangle = facing->Triangles().Value(i);
+            Standard_Integer index1, index2, index3;
+            triangle.Get(index1, index2, index3);
+            
+            // Step 1 - caluclate the normals of the triangles
+            gp_Pnt vertex1 = facing->Nodes().Value(index1);
+            gp_Pnt vertex2 = facing->Nodes().Value(index2);
+            gp_Pnt vertex3 = facing->Nodes().Value(index3);
+            
+            gp_Vec vec12 = gp_Vec(vertex1, vertex2);
+            gp_Vec vec23 = gp_Vec(vertex2, vertex3);
+            
+            
+            gp_Vec cross_product = vec12.Crossed(vec23);
+            
+            double cross_magnitude = cross_product.Magnitude();
+            if (cross_magnitude > 0) {
+                gp_Vec normal = cross_product.Normalized();
+                normals[i] = normal;
+            }
+            
+            // Step 2 - created connected lookup
+            connected_triangles[index1].push_back(i);
+            connected_triangles[index2].push_back(i);
+            connected_triangles[index3].push_back(i);
+            
+            indices.push_back(index1 - 1 + index_offset);
+            indices.push_back(index2 - 1 + index_offset);
+            indices.push_back(index3 - 1 + index_offset);
+        }
+        
+        for (int i = 1; i <= facing->NbNodes(); ++i) {
+            gp_Pnt vertex = facing->Nodes().Value(i);
+            int count = 0;
+            vector< int > connected = connected_triangles[i];
+            vector< int >::iterator it;
+            
+            gp_Vec avg = gp_Vec(0.0, 0.0, 0.0);
+            for(it = connected.begin(); it != connected.end(); ++it) {
+                gp_Vec normal = normals[(*it)];
+                avg += normal;
+                ++count;
+            }
+            if (count > 0) {
+                avg /= (double)count;
+            }
+            
+            positions.push_back(vertex.X());
+            positions.push_back(vertex.Y());
+            positions.push_back(vertex.Z());
+            
+            normalArr.push_back(avg.X());
+            normalArr.push_back(avg.Y());
+            normalArr.push_back(avg.Z());
+        }
+        
+        index_offset += facing->NbNodes();
+        
     }
-
-    for (int i = 1; i <= facing->NbNodes(); ++i) {
-      gp_Pnt vertex = facing->Nodes().Value(i);
-      int count = 0;
-      vector< int > connected = connected_triangles[i];
-      vector< int >::iterator it;
-
-      gp_Vec avg = gp_Vec(0.0, 0.0, 0.0);
-      for(it = connected.begin(); it != connected.end(); ++it) {
-        gp_Vec normal = normals[(*it)];
-        avg += normal;
-        ++count;
-      }
-      if (count > 0) {
-        avg /= (double)count;
-      }
-
-      positions.push_back(vertex.X());
-      positions.push_back(vertex.Y());
-      positions.push_back(vertex.Z());
-
-      normalArr.push_back(avg.X());
-      normalArr.push_back(avg.Y());
-      normalArr.push_back(avg.Z());
-    }
-
-    index_offset += facing->NbNodes();
-
-  }
-
-  mObject result;
-  result["primitive"] = "triangles";
-  result["positions"] = positions;
-  result["normals"] = normalArr;
-  result["indices"] = indices;
-      
-  return result;
+    
+    mObject result;
+    result["primitive"] = "triangles";
+    result["positions"] = positions;
+    result["normals"] = normalArr;
+    result["indices"] = indices;
+    
+    return result;
 }
 
 double get_double(mValue value) {
-  if (value.type() == int_type) {
-    return (double)value.get_int();
-  } else {
-
-    return value.get_real();
-  }
+    if (value.type() == int_type) {
+        return (double)value.get_int();
+    } else {
+        
+        return value.get_real();
+    }
 }
 
 mValue create_cuboid(string id, map< string, mValue > geometry) {
-  map< string, mValue > parameters = geometry["parameters"].get_obj();
-  mValue width = parameters["width"];
-  mValue depth = parameters["depth"];
-  mValue height = parameters["height"];
-  if (!width.is_null() && ((width.type() == real_type) || (width.type() == int_type))
-      &&
-      !depth.is_null() && ((depth.type() == real_type) || (depth.type() == int_type))
-      &&
-      !height.is_null() && ((height.type() == real_type) || (height.type() == int_type))) {
-    
-    TopoDS_Shape shape = BRepPrimAPI_MakeBox(get_double(width), 
-                                             get_double(depth), 
-                                             get_double(height)).Shape();
-    shapes[id] = shape;
-    return tesselate(id);
-  }
-  return  mValue("invalid geometry parameters");
+    map< string, mValue > parameters = geometry["parameters"].get_obj();
+    mValue width = parameters["width"];
+    mValue depth = parameters["depth"];
+    mValue height = parameters["height"];
+    if (!width.is_null() && ((width.type() == real_type) || (width.type() == int_type))
+        &&
+        !depth.is_null() && ((depth.type() == real_type) || (depth.type() == int_type))
+        &&
+        !height.is_null() && ((height.type() == real_type) || (height.type() == int_type))) {
+        
+        TopoDS_Shape shape = BRepPrimAPI_MakeBox(get_double(width), 
+                                                 get_double(depth), 
+                                                 get_double(height)).Shape();
+        shapes[id] = shape;
+        return tesselate(id);
+    }
+    return  mValue("invalid geometry parameters");
 }
 
 mValue create_sphere(string id, map< string, mValue > geometry) {
-  map< string, mValue > parameters = geometry["parameters"].get_obj();
-  mValue radius = parameters["radius"];
-  if (!radius.is_null() && ((radius.type() == real_type) || (radius.type() == int_type))) {
-    TopoDS_Shape shape = BRepPrimAPI_MakeSphere(get_double(radius)).Shape();
-    shapes[id] = shape;
-    return tesselate(id);
-  }
-  return  mValue("invalid geometry parameters");
+    map< string, mValue > parameters = geometry["parameters"].get_obj();
+    mValue radius = parameters["radius"];
+    if (!radius.is_null() && ((radius.type() == real_type) || (radius.type() == int_type))) {
+        TopoDS_Shape shape = BRepPrimAPI_MakeSphere(get_double(radius)).Shape();
+        shapes[id] = shape;
+        return tesselate(id);
+    }
+    return  mValue("invalid geometry parameters");
 }
 
 mValue create_cylinder(string id, map< string, mValue > geometry) {
-  map< string, mValue > parameters = geometry["parameters"].get_obj();
-  mValue radius = parameters["radius"];
-  mValue height = parameters["height"];
-  if (!radius.is_null() && ((radius.type() == real_type) || (radius.type() == int_type))
-      &&
-      !height.is_null() && ((height.type() == real_type) || (height.type() == int_type))) {
-    
-    TopoDS_Shape shape = BRepPrimAPI_MakeCylinder(get_double(radius), 
-                                                  get_double(height)).Shape();
-    shapes[id] = shape;
-    return tesselate(id);
-  }
-  return  mValue("invalid geometry parameters");
+    map< string, mValue > parameters = geometry["parameters"].get_obj();
+    mValue radius = parameters["radius"];
+    mValue height = parameters["height"];
+    if (!radius.is_null() && ((radius.type() == real_type) || (radius.type() == int_type))
+        &&
+        !height.is_null() && ((height.type() == real_type) || (height.type() == int_type))) {
+        
+        TopoDS_Shape shape = BRepPrimAPI_MakeCylinder(get_double(radius), 
+                                                      get_double(height)).Shape();
+        shapes[id] = shape;
+        return tesselate(id);
+    }
+    return  mValue("invalid geometry parameters");
 }
 
 mValue create_cone(string id, map< string, mValue > geometry) {
-  map< string, mValue > parameters = geometry["parameters"].get_obj();
-  mValue bottom_radius = parameters["bottom_radius"];
-  mValue top_radius = parameters["top_radius"];
-  mValue height = parameters["height"];
-  if (!bottom_radius.is_null() && ((bottom_radius.type() == real_type) || (bottom_radius.type() == int_type))
-      &&
-      !top_radius.is_null() && ((top_radius.type() == real_type) || (top_radius.type() == int_type))
-      &&
-      !height.is_null() && ((height.type() == real_type) || (height.type() == int_type))) {
-    
-    TopoDS_Shape shape = BRepPrimAPI_MakeCone(get_double(bottom_radius), 
-                                              get_double(top_radius), 
-                                              get_double(height)).Shape();
-    shapes[id] = shape;
-    return tesselate(id);
-  }
-  return  mValue("invalid geometry parameters");
+    map< string, mValue > parameters = geometry["parameters"].get_obj();
+    mValue bottom_radius = parameters["bottom_radius"];
+    mValue top_radius = parameters["top_radius"];
+    mValue height = parameters["height"];
+    if (!bottom_radius.is_null() && ((bottom_radius.type() == real_type) || (bottom_radius.type() == int_type))
+        &&
+        !top_radius.is_null() && ((top_radius.type() == real_type) || (top_radius.type() == int_type))
+        &&
+        !height.is_null() && ((height.type() == real_type) || (height.type() == int_type))) {
+        
+        TopoDS_Shape shape = BRepPrimAPI_MakeCone(get_double(bottom_radius), 
+                                                  get_double(top_radius), 
+                                                  get_double(height)).Shape();
+        shapes[id] = shape;
+        return tesselate(id);
+    }
+    return  mValue("invalid geometry parameters");
 }
 
 mValue create_wedge(string id, map< string, mValue > geometry) {
-  map< string, mValue > parameters = geometry["parameters"].get_obj();
-  mValue x1 = parameters["x1"];
-  mValue x2 = parameters["x2"];
-  mValue y = parameters["y"];
-  mValue z = parameters["z"];
-  if (!x1.is_null() && ((x1.type() == real_type) || (x1.type() == int_type))
-      &&
-      !x2.is_null() && ((x2.type() == real_type) || (x2.type() == int_type))
-      &&
-      !y.is_null() && ((y.type() == real_type) || (y.type() == int_type))
-      &&
-      !z.is_null() && ((z.type() == real_type) || (z.type() == int_type))) {
-    
-    TopoDS_Shape shape = BRepPrimAPI_MakeWedge(get_double(x1), 
-                                               get_double(y), 
-                                               get_double(z), 
-                                               get_double(x2)).Shape();
-    shapes[id] = shape;
-    return tesselate(id);
-  }
-  return  mValue("invalid geometry parameters");
+    map< string, mValue > parameters = geometry["parameters"].get_obj();
+    mValue x1 = parameters["x1"];
+    mValue x2 = parameters["x2"];
+    mValue y = parameters["y"];
+    mValue z = parameters["z"];
+    if (!x1.is_null() && ((x1.type() == real_type) || (x1.type() == int_type))
+        &&
+        !x2.is_null() && ((x2.type() == real_type) || (x2.type() == int_type))
+        &&
+        !y.is_null() && ((y.type() == real_type) || (y.type() == int_type))
+        &&
+        !z.is_null() && ((z.type() == real_type) || (z.type() == int_type))) {
+        
+        TopoDS_Shape shape = BRepPrimAPI_MakeWedge(get_double(x1), 
+                                                   get_double(y), 
+                                                   get_double(z), 
+                                                   get_double(x2)).Shape();
+        shapes[id] = shape;
+        return tesselate(id);
+    }
+    return  mValue("invalid geometry parameters");
 }
 
 mValue create_torus(string id, map< string, mValue > geometry) {
-  map< string, mValue > parameters = geometry["parameters"].get_obj();
-  mValue r1 = parameters["r1"];
-  mValue r2 = parameters["r2"];
-  if (!r1.is_null() && ((r1.type() == real_type) || (r1.type() == int_type))
-      &&
-      !r2.is_null() && ((r2.type() == real_type) || (r2.type() == int_type))) {
-    
-    TopoDS_Shape shape = BRepPrimAPI_MakeTorus(get_double(r1), 
-                                               get_double(r2)).Shape();
-    shapes[id] = shape;
-    return tesselate(id);
-  }
-  return  mValue("invalid geometry parameters");
+    map< string, mValue > parameters = geometry["parameters"].get_obj();
+    mValue r1 = parameters["r1"];
+    mValue r2 = parameters["r2"];
+    if (!r1.is_null() && ((r1.type() == real_type) || (r1.type() == int_type))
+        &&
+        !r2.is_null() && ((r2.type() == real_type) || (r2.type() == int_type))) {
+        
+        TopoDS_Shape shape = BRepPrimAPI_MakeTorus(get_double(r1), 
+                                                   get_double(r2)).Shape();
+        shapes[id] = shape;
+        return tesselate(id);
+    }
+    return  mValue("invalid geometry parameters");
+}
+
+mValue create_union(string id, map< string, mValue > geometry) {
+    map< string, mValue > parameters = geometry["parameters"].get_obj();
+    if ((parameters["a"].type() == str_type)
+        &&
+        (parameters["b"].type() == str_type)) {
+        string path_a = parameters["a"].get_str();
+        string path_b = parameters["b"].get_str();
+        
+        TopoDS_Shape shape_a = shapes[path_a];
+        TopoDS_Shape shape_b = shapes[path_b];
+        
+        TopoDS_Shape union_shape = BRepAlgoAPI_Fuse(shape_a, shape_b).Shape();
+        shapes[id] = union_shape;
+        return tesselate(id);
+    }
+    return mValue("invalid boolean parameters");
 }
 
 
 mValue create_geometry(string id, map< string, mValue > geometry) {
-  mValue geomType = geometry["type"];
-  if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("cuboid"))) {
-    return create_cuboid(id, geometry);
-  } 
-  if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("sphere"))) {
-    return create_sphere(id, geometry);
-  } 
-  if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("cylinder"))) {
-    return create_cylinder(id, geometry);
-  } 
-  if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("cone"))) {
-    return create_cone(id, geometry);
-  } 
-  if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("wedge"))) {
-    return create_wedge(id, geometry);
-  } 
-  if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("torus"))) {
-    return create_torus(id, geometry);
-  } 
-
-  return mValue("geometry type not found");
+    mValue geomType = geometry["type"];
+    /*
+     * Primitives
+     */
+    if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("cuboid"))) {
+        return create_cuboid(id, geometry);
+    } 
+    if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("sphere"))) {
+        return create_sphere(id, geometry);
+    } 
+    if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("cylinder"))) {
+        return create_cylinder(id, geometry);
+    } 
+    if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("cone"))) {
+        return create_cone(id, geometry);
+    } 
+    if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("wedge"))) {
+        return create_wedge(id, geometry);
+    } 
+    if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("torus"))) {
+        return create_torus(id, geometry);
+    } 
+    /*
+     * Booleans
+     */
+    if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("union"))) {
+        return create_union(id, geometry);
+    }
+    return mValue("geometry type not found");
 }
 
 int read_exact(unsigned char *buf, int len) {
-  int i, got=0;
-  do {
-    if ((i = read(0, buf+got, len-got)) <= 0)
-      return(i);
-    got += i;
-  } while (got<len);
-  return len;
+    int i, got=0;
+    do {
+        if ((i = read(0, buf+got, len-got)) <= 0)
+            return(i);
+        got += i;
+    } while (got<len);
+    return len;
 }
 
 int read_cmd(unsigned char* buf) {
-  int len;
-  if (read_exact(buf, 4) != 4)
-    return(-1);
-  len = (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
-  return read_exact(buf, len);
+    int len;
+    if (read_exact(buf, 4) != 4)
+        return(-1);
+    len = (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
+    return read_exact(buf, len);
 }
 
 int write_exact(const char *buf, int len) {
-  int i, wrote = 0;
-  do {
-    if ((i = write(1, buf+wrote, len-wrote)) <= 0)
-      return (i);
-    wrote += i;
-  } while (wrote<len);
-  return len;
+    int i, wrote = 0;
+    do {
+        if ((i = write(1, buf+wrote, len-wrote)) <= 0)
+            return (i);
+        wrote += i;
+    } while (wrote<len);
+    return len;
 }
 
 int write_cmd(const char *buf, int len) {
-  char size_buf[4];
-  size_buf[0] = (len >> 24) & 0xff;
-  size_buf[1] = (len >> 16) & 0xff;
-  size_buf[2] = (len >> 8) & 0xff;
-  size_buf[3] = len & 0xff;
-  write_exact(size_buf, 4);
-  return write_exact(buf, len);
+    char size_buf[4];
+    size_buf[0] = (len >> 24) & 0xff;
+    size_buf[1] = (len >> 16) & 0xff;
+    size_buf[2] = (len >> 8) & 0xff;
+    size_buf[3] = len & 0xff;
+    write_exact(size_buf, 4);
+    return write_exact(buf, len);
 }
 
 int main (int argc, char *argv[]) {
-
-  unsigned char buf[1024*1024];
-  int json_size;
-
-  while ((json_size = read_cmd(buf)) > 0) {
+    
+    unsigned char buf[1024*1024];
+    int json_size;
+    
+    while ((json_size = read_cmd(buf)) > 0) {
         
-    try {
-      mValue value;
-      // Set 0-delimiter for conversion to string
-      buf[json_size] = 0;
-      string json_string = string((char*)buf);
-      read(json_string, value);
-
-      if (value.type() == obj_type) {
-        map< string, mValue > objMap = mObject(value.get_obj());
-
-        mValue msgType = objMap["type"];
-        mValue id = objMap["id"];
-        mValue geometry = objMap["geometry"];
-
-        if (!msgType.is_null() && (msgType.type() == str_type) && (msgType.get_str() == string("create"))
-            && 
-            !id.is_null() && (id.type() == str_type)
-            && 
-            !geometry.is_null() && (geometry.type() == obj_type)) {
-          
-
-          mValue response = create_geometry(id.get_str(), mObject(geometry.get_obj()));
-          string output = write(response);
-          write_cmd(output.c_str(), output.size());
-          continue;
+        try {
+            mValue value;
+            // Set 0-delimiter for conversion to string
+            buf[json_size] = 0;
+            string json_string = string((char*)buf);
+            read(json_string, value);
+            
+            if (value.type() == obj_type) {
+                map< string, mValue > objMap = mObject(value.get_obj());
+                
+                mValue msgType = objMap["type"];
+                mValue id = objMap["id"];
+                mValue geometry = objMap["geometry"];
+                
+                if (!msgType.is_null() && (msgType.type() == str_type) && (msgType.get_str() == string("create"))
+                    && 
+                    !id.is_null() && (id.type() == str_type)
+                    && 
+                    !geometry.is_null() && (geometry.type() == obj_type)) {
+                    
+                    
+                    mValue response = create_geometry(id.get_str(), mObject(geometry.get_obj()));
+                    string output = write(response);
+                    write_cmd(output.c_str(), output.size());
+                    continue;
+                }
+                
+            }
+            
+            mValue response = mValue("unknown message");
+            string output = write(response);
+            write_cmd(output.c_str(), output.size());
+            
+        } catch (exception& e) {
+            mValue response = mValue(e.what());
+            string output = write(response);
+            write_cmd(output.c_str(), output.size());
+        } catch (...) {
+            mValue response = mValue("exception!");
+            string output = write(response);
+            write_cmd(output.c_str(), output.size());
+            
         }
-      }
         
-      mValue response = mValue("unknown message");
-      string output = write(response);
-      write_cmd(output.c_str(), output.size());
-    } catch (...) {
-      mValue response = mValue("exception!");
-      string output = write(response);
-      write_cmd(output.c_str(), output.size());
-
     }
-      
-  }
-
-  return 0;
+    
+    return 0;
 }

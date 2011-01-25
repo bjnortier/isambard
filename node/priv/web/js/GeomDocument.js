@@ -25,6 +25,15 @@ function GeomDocument() {
         }
     }
 
+    this.findByPath = function(path) {
+        for (var i in this.rootNodes) {
+            if (this.rootNodes[i].path == path) {
+                return this.rootNodes[i];
+            }
+        }
+        return null;
+    }
+    
     this.iterate = function(iterator) {
         for (var i in this.rootNodes) {
             iterator(this.rootNodes[i]);

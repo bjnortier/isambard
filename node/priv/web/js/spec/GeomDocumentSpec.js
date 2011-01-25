@@ -16,8 +16,8 @@ describe("GeomDocument", function() {
         doc.add(node1);
         doc.add(node2);
         expect(doc.rootNodes.length).toEqual(2);
-        expect(doc.rootNodes[0]).toEqual(node1);
-        expect(doc.rootNodes[1]).toEqual(node2);
+        expect(doc.rootNodes[1]).toEqual(node1);
+        expect(doc.rootNodes[0]).toEqual(node2);
 
         doc.remove(node1);
         expect(doc.rootNodes.length).toEqual(1);
@@ -25,7 +25,17 @@ describe("GeomDocument", function() {
 
         doc.remove(node2);
         expect(doc.rootNodes.length).toEqual(0);
-
+        
+    });
+    
+    it("can be use to find nodes", function() {
+        var node1 = new GeomNode({type: "sphere", path: "/1"});
+        var node2 = new GeomNode({type: "cuboid", path: "/2"});
+        doc.add(node1);
+        doc.add(node2);
+        
+        expect(doc.findByPath("/1")).toEqual(node1);
+        expect(doc.findByPath("/2")).toEqual(node2);
     });
 
 });
