@@ -25,7 +25,7 @@ function Action(label, iconPath, parameters, okFn) {
 
 function delete_geom() {
     for (i in Interaction.selected) {
-        geom_document.removeByPath(Interaction.selected[i]);
+        geom_docu.removeByPath(Interaction.selected[i]);
         SceneJS.withNode(Interaction.selected[i]).parent().remove({node: Interaction.selected[i]});
     }
     Interaction.unselect();
@@ -33,13 +33,11 @@ function delete_geom() {
 
 
 function create_primitive(parameters, type) {
-    parameters['type'] = type;
-    create_geom(parameters);
-}
+    var geometry = {};
+    geometry['type'] = type;
+    geometry['parameters'] = parameters;
 
-
-function create_geom(parameters) {
-    var cmd = create_geom_command(parameters);
+    var cmd = create_geom_command(geometry);
     command_stack.execute(cmd);
 }
 

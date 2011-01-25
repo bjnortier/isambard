@@ -1,14 +1,14 @@
 var command_stack = new CommandStack();
 var geom_doc = new GeomDocument();
 
-function create_geom_command(parameters) {
+function create_geom_command(geometry) {
     
     var doFn = function() {
         $.ajax({
             type: "POST",
             url: "/geom/",
             contentType: "application/json",
-            data: JSON.stringify(parameters),
+            data: JSON.stringify(geometry),
             success: function(nodeData){
                 var path = nodeData.path;
                 $.ajax({
@@ -16,9 +16,9 @@ function create_geom_command(parameters) {
                     url: path,
                     success: function(nodeData) {
                         geom_doc.add(new GeomNode({
-                            type: parameters.type,
+                            type: geometry.type,
                             path: path,
-                            parameters: parameters}));
+                            parameters: geometry.parameters}));
                         /* FIXME: The picking doesn't seem to work unless there is an 
                            extra node above the geometry node? */
                         nodeData['type'] = 'geometry';
@@ -50,10 +50,18 @@ function GeomDocumentRenderer() {
         $('#geom-model-doc').html('');
         var geomNodeRenderer = function(geomNode) {
             var nodeTable = $('<table>');
-            var typeRow = $('<tr>').append('<td>' + geomNode.type + '</td>');
+            var typeRow = $('<tr>').append('<td>- ' + geomNode.type + '</td>');
 
             nodeTable.append(typeRow);
-
+            
+            var parametersTable = $('<table>');
+            for (key in geomNode.parameters) {
+                var parameterRow = $('<tr>');
+                parameterRow.append($('<td>').append(key));
+                parameterRow.append($('<td>').append(geomNode.parameters[key]));
+                parametersTable.append(parameterRow);
+            }
+            nodeTable.append(parametersTable);
 
             $('#geom-model-doc').append(nodeTable);
         }

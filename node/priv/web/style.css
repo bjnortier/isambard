@@ -48,7 +48,9 @@ body {
 }
 
 #geom-model-doc table {
-    border-collapse:collapse;
+    /*border-collapse:collapse;*/
+    border: solid thin grey;
+    text-align: left;
 }
 
 #geom-model-doc table td {

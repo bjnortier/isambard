@@ -1,8 +1,8 @@
-describe("Document", function() {
+describe("GeomDocument", function() {
     
     var doc;
     beforeEach(function() {
-        doc = new Document();
+        doc = new GeomDocument();
     });
 
     it("should be empty on creation", function() {

@@ -1,10 +1,18 @@
+
+
 function GeomNode() {
 
     if (!arguments[0].type) {
         throw new Error("type is not defined");
     }
 
+    if (!arguments[0].path) {
+        throw new Error("path is not defined");
+    }
+
+
     this.type = arguments[0].type;
+    this.path = arguments[0].path;
     this.parameters = arguments[0].parameters;
     this.parent = undefined;
 
