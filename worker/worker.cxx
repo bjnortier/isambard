@@ -10,10 +10,13 @@
 #include <BRep_Tool.hxx>
 #include <BRepLib.hxx>
 #include <BRepMesh.hxx>
-#include <BRepPrimAPI_MakeCylinder.hxx>
-#include <BRepPrimAPI_MakePrism.hxx>
-#include <BRepPrimAPI_MakeSphere.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
+#include <BRepPrimAPI_MakeSphere.hxx>
+#include <BRepPrimAPI_MakeCylinder.hxx>
+#include <BRepPrimAPI_MakeCone.hxx>
+#include <BRepPrimAPI_MakeWedge.hxx>
+#include <BRepPrimAPI_MakeTorus.hxx>
+
 #include <gp.hxx>
 #include <gp_Pnt.hxx>
 #include <TopExp_Explorer.hxx>
@@ -136,17 +139,6 @@ double get_double(mValue value) {
   }
 }
 
-mValue create_sphere(string id, map< string, mValue > geometry) {
-  map< string, mValue > parameters = geometry["parameters"].get_obj();
-  mValue radius = parameters["radius"];
-  if (!radius.is_null() && ((radius.type() == real_type) || (radius.type() == int_type))) {
-    TopoDS_Shape shape = BRepPrimAPI_MakeSphere(get_double(radius)).Shape();
-    shapes[id] = shape;
-    return tesselate(id);
-  }
-  return  mValue("invalid geometry parameters");
-}
-
 mValue create_cuboid(string id, map< string, mValue > geometry) {
   map< string, mValue > parameters = geometry["parameters"].get_obj();
   mValue width = parameters["width"];
@@ -167,6 +159,94 @@ mValue create_cuboid(string id, map< string, mValue > geometry) {
   return  mValue("invalid geometry parameters");
 }
 
+mValue create_sphere(string id, map< string, mValue > geometry) {
+  map< string, mValue > parameters = geometry["parameters"].get_obj();
+  mValue radius = parameters["radius"];
+  if (!radius.is_null() && ((radius.type() == real_type) || (radius.type() == int_type))) {
+    TopoDS_Shape shape = BRepPrimAPI_MakeSphere(get_double(radius)).Shape();
+    shapes[id] = shape;
+    return tesselate(id);
+  }
+  return  mValue("invalid geometry parameters");
+}
+
+mValue create_cylinder(string id, map< string, mValue > geometry) {
+  map< string, mValue > parameters = geometry["parameters"].get_obj();
+  mValue radius = parameters["radius"];
+  mValue height = parameters["height"];
+  if (!radius.is_null() && ((radius.type() == real_type) || (radius.type() == int_type))
+      &&
+      !height.is_null() && ((height.type() == real_type) || (height.type() == int_type))) {
+    
+    TopoDS_Shape shape = BRepPrimAPI_MakeCylinder(get_double(radius), 
+                                                  get_double(height)).Shape();
+    shapes[id] = shape;
+    return tesselate(id);
+  }
+  return  mValue("invalid geometry parameters");
+}
+
+mValue create_cone(string id, map< string, mValue > geometry) {
+  map< string, mValue > parameters = geometry["parameters"].get_obj();
+  mValue bottom_radius = parameters["bottom_radius"];
+  mValue top_radius = parameters["top_radius"];
+  mValue height = parameters["height"];
+  if (!bottom_radius.is_null() && ((bottom_radius.type() == real_type) || (bottom_radius.type() == int_type))
+      &&
+      !top_radius.is_null() && ((top_radius.type() == real_type) || (top_radius.type() == int_type))
+      &&
+      !height.is_null() && ((height.type() == real_type) || (height.type() == int_type))) {
+    
+    TopoDS_Shape shape = BRepPrimAPI_MakeCone(get_double(bottom_radius), 
+                                              get_double(top_radius), 
+                                              get_double(height)).Shape();
+    shapes[id] = shape;
+    return tesselate(id);
+  }
+  return  mValue("invalid geometry parameters");
+}
+
+mValue create_wedge(string id, map< string, mValue > geometry) {
+  map< string, mValue > parameters = geometry["parameters"].get_obj();
+  mValue x1 = parameters["x1"];
+  mValue x2 = parameters["x2"];
+  mValue y = parameters["y"];
+  mValue z = parameters["z"];
+  if (!x1.is_null() && ((x1.type() == real_type) || (x1.type() == int_type))
+      &&
+      !x2.is_null() && ((x2.type() == real_type) || (x2.type() == int_type))
+      &&
+      !y.is_null() && ((y.type() == real_type) || (y.type() == int_type))
+      &&
+      !z.is_null() && ((z.type() == real_type) || (z.type() == int_type))) {
+    
+    TopoDS_Shape shape = BRepPrimAPI_MakeWedge(get_double(x1), 
+                                               get_double(y), 
+                                               get_double(z), 
+                                               get_double(x2)).Shape();
+    shapes[id] = shape;
+    return tesselate(id);
+  }
+  return  mValue("invalid geometry parameters");
+}
+
+mValue create_torus(string id, map< string, mValue > geometry) {
+  map< string, mValue > parameters = geometry["parameters"].get_obj();
+  mValue r1 = parameters["r1"];
+  mValue r2 = parameters["r2"];
+  if (!r1.is_null() && ((r1.type() == real_type) || (r1.type() == int_type))
+      &&
+      !r2.is_null() && ((r2.type() == real_type) || (r2.type() == int_type))) {
+    
+    TopoDS_Shape shape = BRepPrimAPI_MakeTorus(get_double(r1), 
+                                               get_double(r2)).Shape();
+    shapes[id] = shape;
+    return tesselate(id);
+  }
+  return  mValue("invalid geometry parameters");
+}
+
+
 mValue create_geometry(string id, map< string, mValue > geometry) {
   mValue geomType = geometry["type"];
   if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("cuboid"))) {
@@ -175,6 +255,19 @@ mValue create_geometry(string id, map< string, mValue > geometry) {
   if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("sphere"))) {
     return create_sphere(id, geometry);
   } 
+  if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("cylinder"))) {
+    return create_cylinder(id, geometry);
+  } 
+  if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("cone"))) {
+    return create_cone(id, geometry);
+  } 
+  if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("wedge"))) {
+    return create_wedge(id, geometry);
+  } 
+  if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("torus"))) {
+    return create_torus(id, geometry);
+  } 
+
   return mValue("geometry type not found");
 }
 
@@ -221,23 +314,6 @@ int main (int argc, char *argv[]) {
   unsigned char buf[1024*1024];
   int json_size;
 
-  unsigned char size_buf[4];
-  /*while ((json_size = read(0, size_buf,4)) > 0) {
-
-    mObject result;
-    result["0"] = mValue(size_buf[0]);
-    result["1"] = mValue(size_buf[1]);
-    result["2"] = mValue(size_buf[2]);
-    result["3"] = mValue(size_buf[3]);
-
-    int len = (size_buf[0] << 24) | (size_buf[1] << 16) | (size_buf[2] << 8) | size_buf[3];
-
-    result["len"] = mValue(len);
-
-    string output = write(result);
-    write_cmd(output.c_str(), output.size());*/
-
-    
   while ((json_size = read_cmd(buf)) > 0) {
         
     try {
