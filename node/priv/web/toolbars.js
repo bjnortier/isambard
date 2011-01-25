@@ -1,8 +1,7 @@
-function Action(label, iconPath, parameters, okFn) {
+function Action(label, iconPath, fn) {
     this.label = label;
     this.iconPath = iconPath;
-    this.parameters = parameters;
-    this.okFn = okFn;
+    this.fn = fn;
 
     this.render = function(toolbar) {
 
@@ -10,15 +9,10 @@ function Action(label, iconPath, parameters, okFn) {
         toolbar.append('<img id="' + imgId + '" src="' + this.iconPath + '"/>');
         
         // Because 'this' is the HTML element inside the function below,
-        // we have to save a reference
-        var okFn = this.okFn;
-        var parameters = this.parameters;
+        // we have to use a reference
+        var fn = this.fn;
         jQuery('#' + imgId).click(function() {
-            if (parameters.length > 0) {
-                open_dialog(parameters, okFn);
-            } else {
-                okFn();
-            }
+            fn();
         });
     }
 }
@@ -32,13 +26,15 @@ function delete_geom() {
 }
 
 
-function create_primitive(parameters, type) {
-    var geometry = {};
-    geometry['type'] = type;
-    geometry['parameters'] = parameters;
-
-    var cmd = create_geom_command(geometry);
-    command_stack.execute(cmd);
+function create_primitive(type, parameters) {
+    var geometryParams = {};
+    for (i in parameters) {
+        geometryParams[parameters[i]] = null;
+    }
+    geom_doc.add(new GeomNode({
+        type: type,
+        prototype: true,
+        parameters: geometryParams}));
 }
 
 
@@ -199,50 +195,28 @@ $(document).ready(function() {
      * Edit
      */
     new Action('delete', 'images/trash.png', 
-               [],
                function(parameters) { delete_geom(); }).render($('#edit'));
     
     /*
      * Primitives
      */
     new Action('cuboid', 'images/cuboid.png', 
-               [{name: "width", label: "Width (X)"},
-                {name: "depth", label: "Depth (Y)"},
-                {name: "height", label: "Height (Z)"}
-               ],
-               function(parameters) { create_primitive(parameters, "cuboid"); }).render($('#primitives'));
+               function() { create_primitive("cuboid",  ["width", "depth", "height"]); }).render($('#primitives'));
     new Action('sphere', 'images/sphere.png', 
-               [{name: "radius", label: "Radius"}
-               ],
-               function(parameters) { create_primitive(parameters, "sphere"); }).render($('#primitives'));
+               function(parameters) { create_primitive("sphere", ["radius"]); }).render($('#primitives'));
     new Action('cylinder', 'images/cylinder.png', 
-               [{name: "radius", label: "Radius (XY)"},
-                {name: "height", label: "Height (Z)"}
-               ],
-               function(parameters) { create_primitive(parameters, "cylinder"); }).render($('#primitives'));
+               function(parameters) { create_primitive("cylinder", ["radius", "height"]); }).render($('#primitives'));
     new Action('cone', 'images/cone.png', 
-               [{name: "bottom_radius", label: "Bottom radius (XY)"},
-                {name: "top_radius", label: "Top radius (XY)"},
-                {name: "height", label: "Height (Z)"}
-               ],
-               function(parameters) { create_primitive(parameters, "cone"); }).render($('#primitives'));
+               function(parameters) { create_primitive("cone", ["bottom_radius", "top_radius", "height"]); }).render($('#primitives'));
      new Action('wedge', 'images/wedge.png', 
-               [{name: "x1", label: "X1"},
-                {name: "x2", label: "X2"},
-                {name: "y", label: "Y"},
-                {name: "z", label: "Z"},
-               ],
-               function(parameters) { create_primitive(parameters, "wedge"); }).render($('#primitives'));
+                function(parameters) { create_primitive("wedge", ["x1", "x2", "y", "z"]); }).render($('#primitives'));
     new Action('torus', 'images/torus.png', 
-               [{name: "r1", label: "Radius to tube (XY)"},
-                {name: "r2", label: "Tube radius (Z)"}
-               ],
-               function(parameters) { create_primitive(parameters, "torus"); }).render($('#primitives'));
+               function(parameters) { create_primitive("torus", ["r1", "r2"]); }).render($('#primitives'));
 
     /*
      * Booleans
      */
-    new Action('union', 'images/union.png', 
+    /*new Action('union', 'images/union.png', 
                [],
                function(parameters) { boolean("union"); }).render($('#boolean'));
     new Action('difference', 'images/diff.png', 
@@ -250,12 +224,12 @@ $(document).ready(function() {
                function(parameters) { boolean("diff"); }).render($('#boolean'));
     new Action('intersect', 'images/intersect.png', 
                [],
-               function(parameters) { boolean("intersect"); }).render($('#boolean'));
+               function(parameters) { boolean("intersect"); }).render($('#boolean'));*/
     
     /*
      * Transformations
      */
-    new Action('translate', 'images/translate.png', 
+    /*new Action('translate', 'images/translate.png', 
                [{name: "dx", label: "dX"},
                 {name: "dy", label: "dY"},
                 {name: "dz", label: "dZ"}],
@@ -274,7 +248,7 @@ $(document).ready(function() {
                 {name: "vy", label: "Axis Y"},
                 {name: "vz", label: "Axis Z"},
                 {name: "angle", label: "Angle (deg)"},],
-               function(parameters) { transform(parameters, "rotate"); }).render($('#transforms'));
+               function(parameters) { transform(parameters, "rotate"); }).render($('#transforms'));*/
 
 
 });

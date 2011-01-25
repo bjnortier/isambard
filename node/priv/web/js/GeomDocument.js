@@ -4,7 +4,7 @@ function GeomDocument() {
     this.rootNodes = [];
     
     this.add = function(node) {
-        this.rootNodes.push(node);
+        this.rootNodes = [node].concat(this.rootNodes);
         this.notify({add: node});
     }
 

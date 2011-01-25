@@ -1,7 +1,7 @@
 var command_stack = new CommandStack();
 var geom_doc = new GeomDocument();
 
-function create_geom_command(geometry) {
+function create_geom_command(prototype, geometry) {
     
     var doFn = function() {
         $.ajax({
@@ -15,6 +15,7 @@ function create_geom_command(geometry) {
                     type: "GET",
                     url: path,
                     success: function(nodeData) {
+                        geom_doc.remove(prototype);
                         geom_doc.add(new GeomNode({
                             type: geometry.type,
                             path: path,
@@ -49,21 +50,39 @@ function GeomDocumentRenderer() {
 
         $('#geom-model-doc').html('');
         var geomNodeRenderer = function(geomNode) {
-            var nodeTable = $('<table>');
-            var typeRow = $('<tr>').append('<td>- ' + geomNode.type + '</td>');
 
-            nodeTable.append(typeRow);
-            
-            var parametersTable = $('<table>');
+            var paramsArr = [];
             for (key in geomNode.parameters) {
-                var parameterRow = $('<tr>');
-                parameterRow.append($('<td>').append(key));
-                parameterRow.append($('<td>').append(geomNode.parameters[key]));
-                parametersTable.append(parameterRow);
+                paramsArr.push({key: key,
+                                value: geomNode.parameters[key],
+                                prototype: geomNode.prototype
+                               });
             }
-            nodeTable.append(parametersTable);
+            var template = '<table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^prototype}}{{value}}{{/prototype}}{{#prototype}}<input id="{{key}}" type="text">{{/prototype}}</td></tr>{{/paramsArr}}</table>';
+            var paramsTable = $.mustache(template, {paramsArr : paramsArr});
+            
+            var template = '<table><tr><td>{{type}}</td></tr><tr><td>{{{paramsTable}}}</td></tr>{{#prototype}}<tr><td><input id="modal-ok" type="submit" value="Ok"/><input id="modal-cancel" type="submit" value="Cancel"/></td></tr>{{/prototype}}</table>';
+            var view = {type: geomNode.type,
+                        prototype: geomNode.prototype,
+                        paramsTable: paramsTable};
+            var nodeTable = $.mustache(template, view);
 
             $('#geom-model-doc').append(nodeTable);
+
+            $('#modal-ok').click(function() {
+                if (geomNode.prototype) {
+                    var parameters = {};
+                    for (key in geomNode.parameters) {
+                        parameters[key] = parseFloat($('#' + key).val());
+                    }
+                    var cmd = create_geom_command(geomNode, {type: geomNode.type,
+                                                             parameters: parameters});
+                    command_stack.execute(cmd);
+                }
+            });
+            $('#modal-cancel').click(function() {
+                geom_doc.remove(geomNode);
+            });
         }
         geom_doc.iterate(geomNodeRenderer);
     }

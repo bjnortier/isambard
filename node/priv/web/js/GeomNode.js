@@ -6,11 +6,7 @@ function GeomNode() {
         throw new Error("type is not defined");
     }
 
-    if (!arguments[0].path) {
-        throw new Error("path is not defined");
-    }
-
-
+    this.prototype = arguments[0].prototype;
     this.type = arguments[0].type;
     this.path = arguments[0].path;
     this.parameters = arguments[0].parameters;
