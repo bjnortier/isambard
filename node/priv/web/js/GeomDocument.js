@@ -33,6 +33,35 @@ function GeomDocument() {
         }
         return null;
     }
+
+    this.addTransformToNodeWithPath = function(path, transform) {
+        var node = this.findByPath(path);
+        if (node) {
+            // Only one prototype transform allowed
+            if (transform.prototype) {
+                for (i in node.transforms) {
+                    if (node.transforms[i].prototype) {
+                        throw(new Error('multiple prototype transforms not allowed'));
+                    }
+                }
+            }
+
+            node.transforms.push(transform);
+            this.notify({updated: node});
+        } else {
+            throw(new Error('node eith path "' + path + '" not found'));
+        }
+    }
+
+    this.removeTransformFromNodeWithPath = function(path, transform) {
+        var node = this.findByPath(path);
+        if (node) {
+            node.transforms.splice(node.transforms.indexOf(transform),1);
+            this.notify({updated: node});
+        } else {
+            throw(new Error('node eith path "' + path + '" not found'));
+        }
+    }
     
     this.iterate = function(iterator) {
         for (var i in this.rootNodes) {

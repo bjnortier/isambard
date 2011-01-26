@@ -11,7 +11,7 @@ function Action(label, iconPath, fn) {
         // Because 'this' is the HTML element inside the function below,
         // we have to use a reference
         var fn = this.fn;
-        jQuery('#' + imgId).click(function() {
+        jQuery("#" + imgId).click(function() {
             fn();
         });
     }
@@ -26,10 +26,10 @@ function delete_geom() {
 }
 
 
-function create_primitive(type, parameters) {
+function create_primitive(type, keys) {
     var geometryParams = {};
-    for (i in parameters) {
-        geometryParams[parameters[i]] = null;
+    for (i in keys) {
+        geometryParams[keys[i]] = null;
     }
     geom_doc.add(new GeomNode({
         type: type,
@@ -37,8 +37,29 @@ function create_primitive(type, parameters) {
         parameters: geometryParams}));
 }
 
+function create_transform(type, keys) {
+    if (Interaction.selected.length != 1)  {
+        alert("no object selected!");
+        return;
+    }
+    var transformParams = {};
+    for (i in keys) {
+        transformParams[keys[i]] = null;
+    }
+    
+    var path = Interaction.selected[0];
+
+    geom_doc.addTransformToNodeWithPath(
+        path,
+        new Transform({
+            type: type,
+            prototype: true,
+            parameters: transformParams
+        }));
+}
+
 function add_to_scene(path, tesselation) {
-    tesselation['type'] = 'geometry';
+    tesselation["type"] = "geometry";
     SceneJS.withNode("geom").add("node", {type: "material",
                                           id: path,
                                           emit: 0,
@@ -78,7 +99,7 @@ function boolean(type) {
                         var node2 = geom_doc.findByPath(Interaction.selected[1]);
                         geom_doc.remove(node1);
                         geom_doc.remove(node2);
-                        geometry['path'] = path;
+                        geometry["path"] = path;
                         var boolNode = new GeomNode(geometry, node1, node2);
                         geom_doc.add(boolNode);
 
@@ -100,11 +121,11 @@ function boolean(type) {
 
 function transform(parameters, type) {
     if (Interaction.selected.length != 1)  {
-        alert('must have 1 object selected!');
+        alert("must have 1 object selected!");
         return;
     }
-    parameters['type'] = type;
-    parameters['path'] = Interaction.selected[0];
+    parameters["type"] = type;
+    parameters["path"] = Interaction.selected[0];
 
     $.ajax({
         type: "POST",
@@ -160,7 +181,7 @@ function open_dialog(parameters, okFn) {
         return result;
     }
 
-    var form = '<form><fieldset>';
+    var form = "<form><fieldset>";
     
     for (i in parameters) {
         var parameter = parameters[i];
@@ -168,7 +189,7 @@ function open_dialog(parameters, okFn) {
         form += field;
     }
     form += '</fieldset></form>';
-    $('#dialog').html(form);
+    $("#dialog").html(form);
 
     $( "#dialog" ).dialog({
 	autoOpen: false,
@@ -181,7 +202,7 @@ function open_dialog(parameters, okFn) {
 
 		var bValid = true;
 		for (i in parameters) {
-                    var input = $('#dialog-' + parameters[i].name);
+                    var input = $("#dialog-" + parameters[i].name);
                     input.removeClass( "ui-state-error" );
                     bValid = bValid & checkFloat(input);
                 }
@@ -190,7 +211,7 @@ function open_dialog(parameters, okFn) {
                     var result =  {};
                     for (i in parameters) {
                         var parameter = parameters[i];
-                        result[parameter.name] = parseFloat($('#dialog-' + parameter.name).val());
+                        result[parameter.name] = parseFloat($("#dialog-" + parameter.name).val());
                     }
                     
                     okFn(result);
@@ -213,50 +234,47 @@ $(document).ready(function() {
     /*
      * Edit
      */
-    new Action('delete', 'images/trash.png', 
-               function(parameters) { delete_geom(); }).render($('#edit'));
+    new Action("delete", "images/trash.png", 
+               function(parameters) { delete_geom(); }).render($("#edit"));
     
     /*
      * Primitives
      */
-    new Action('cuboid', 'images/cuboid.png', 
-               function() { create_primitive("cuboid",  ["width", "depth", "height"]); }).render($('#primitives'));
-    new Action('sphere', 'images/sphere.png', 
-               function(parameters) { create_primitive("sphere", ["radius"]); }).render($('#primitives'));
-    new Action('cylinder', 'images/cylinder.png', 
-               function(parameters) { create_primitive("cylinder", ["radius", "height"]); }).render($('#primitives'));
-    new Action('cone', 'images/cone.png', 
-               function(parameters) { create_primitive("cone", ["bottom_radius", "top_radius", "height"]); }).render($('#primitives'));
-     new Action('wedge', 'images/wedge.png', 
-                function(parameters) { create_primitive("wedge", ["x1", "x2", "y", "z"]); }).render($('#primitives'));
-    new Action('torus', 'images/torus.png', 
-               function(parameters) { create_primitive("torus", ["r1", "r2"]); }).render($('#primitives'));
+    new Action("cuboid", "images/cuboid.png", 
+               function() { create_primitive("cuboid",  ["width", "depth", "height"]); }).render($("#primitives"));
+    new Action("sphere", "images/sphere.png", 
+               function(parameters) { create_primitive("sphere", ["radius"]); }).render($("#primitives"));
+    new Action("cylinder", "images/cylinder.png", 
+               function(parameters) { create_primitive("cylinder", ["radius", "height"]); }).render($("#primitives"));
+    new Action("cone", "images/cone.png", 
+               function(parameters) { create_primitive("cone", ["bottom_radius", "top_radius", "height"]); }).render($("#primitives"));
+     new Action("wedge", "images/wedge.png", 
+                function(parameters) { create_primitive("wedge", ["x1", "x2", "y", "z"]); }).render($("#primitives"));
+    new Action("torus", "images/torus.png", 
+               function(parameters) { create_primitive("torus", ["r1", "r2"]); }).render($("#primitives"));
 
     /*
      * Booleans
      */
-    new Action('union', 'images/union.png', 
-               function(parameters) { boolean("union"); }).render($('#boolean'));
-    new Action('subtract', 'images/diff.png', 
-               function(parameters) { boolean("subtract"); }).render($('#boolean'));
-    new Action('intersect', 'images/intersect.png', 
-               function(parameters) { boolean("intersect"); }).render($('#boolean'));
+    new Action("union", "images/union.png", 
+               function(parameters) { boolean("union"); }).render($("#boolean"));
+    new Action("subtract", "images/diff.png", 
+               function(parameters) { boolean("subtract"); }).render($("#boolean"));
+    new Action("intersect", "images/intersect.png", 
+               function(parameters) { boolean("intersect"); }).render($("#boolean"));
     
     /*
      * Transformations
      */
-    /*new Action('translate', 'images/translate.png', 
-               [{name: "dx", label: "dX"},
-                {name: "dy", label: "dY"},
-                {name: "dz", label: "dZ"}],
-               function(parameters) { transform(parameters, "translate"); }).render($('#transforms'));
-    new Action('scale', 'images/scale.png', 
+    new Action("translate", "images/translate.png", 
+               function(parameters) { create_transform("translate", ["dx", "dy", "dz"]); }).render($("#transforms"));
+    /*new Action("scale", "images/scale.png", 
                [{name: "x", label: "X"},
                 {name: "y", label: "Y"},
                 {name: "z", label: "Z"},
                 {name: "factor", label: "Factor"},],
-               function(parameters) { transform(parameters, "scale"); }).render($('#transforms'));
-    new Action('rotate', 'images/rotate.png', 
+               function(parameters) { transform(parameters, "scale"); }).render($("#transforms"));
+    new Action("rotate", "images/rotate.png", 
                [{name: "x", label: "Position X"},
                 {name: "y", label: "Position Y"},
                 {name: "z", label: "Position Z"},
@@ -264,7 +282,7 @@ $(document).ready(function() {
                 {name: "vy", label: "Axis Y"},
                 {name: "vz", label: "Axis Z"},
                 {name: "angle", label: "Angle (deg)"},],
-               function(parameters) { transform(parameters, "rotate"); }).render($('#transforms'));*/
+               function(parameters) { transform(parameters, "rotate"); }).render($("#transforms"));*/
 
 
 });
