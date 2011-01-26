@@ -119,116 +119,6 @@ function boolean(type) {
     command_stack.execute(cmd);
 }
 
-function transform(parameters, type) {
-    if (Interaction.selected.length != 1)  {
-        alert("must have 1 object selected!");
-        return;
-    }
-    parameters["type"] = type;
-    parameters["path"] = Interaction.selected[0];
-
-    $.ajax({
-        type: "POST",
-        url: "/geom/",
-        contentType: "application/json",
-        data: JSON.stringify(parameters),
-        success: function(nodeData){
-            var path = nodeData.path;
-            $.ajax({
-                type: "GET",
-                url: path,
-                success: function(nodeData) {
-                    SceneJS.withNode(Interaction.selected[0]).parent().remove({node: Interaction.selected[0]});
-                    Interaction.unselect();
-
-                    /* FIXME: The picking doesn't seem to work unless there is an 
-                       extra node above the geometry node? */
-                    SceneJS.withNode("geom").add("node", {type: "material",
-                                                          id: path,
-                                                          emit: 0,
-                                                          baseColor:      { r: 0.5, g: 1.0, b: 0.0 },
-                                                          specularColor:  { r: 0.9, g: 0.9, b: 0.9 },
-                                                          specular:       0.9,
-                                                          shine:          100.0,
-                                                          nodes: [nodeData]});
-                    Interaction.pickable(path);
-                }
-            });
-        }
-    });
-}
-
-
-function open_dialog(parameters, okFn) {
-
-    $( "#dialog:ui-dialog" ).dialog( "destroy" );
-
-    function checkFloat( o, n) {
-        var result = true;
-            try {
-                if (o.val().length == 0) {
-                    result = false;
-                }
-                if (isNaN(parseFloat(o.val()))) {
-                    result = false;
-                }
-            } catch(e) {
-                result = false;
-	    }
-        if (result == false) {
-            o.addClass( "ui-state-error" );
-        }
-        return result;
-    }
-
-    var form = "<form><fieldset>";
-    
-    for (i in parameters) {
-        var parameter = parameters[i];
-        var field = '<label for="' + parameter.name + '">' + parameter.label + '</label><input type="text" name="' + parameter.name + '" id="dialog-' + parameter.name + '" class="text ui-widget-content ui-corner-all"/><br/>';
-        form += field;
-    }
-    form += '</fieldset></form>';
-    $("#dialog").html(form);
-
-    $( "#dialog" ).dialog({
-	autoOpen: false,
-	width: 250,
-	height: 300,
-	modal: true,
-	buttons: {
-	    Ok : function() {
-
-
-		var bValid = true;
-		for (i in parameters) {
-                    var input = $("#dialog-" + parameters[i].name);
-                    input.removeClass( "ui-state-error" );
-                    bValid = bValid & checkFloat(input);
-                }
-                
-		if ( bValid ) {
-                    var result =  {};
-                    for (i in parameters) {
-                        var parameter = parameters[i];
-                        result[parameter.name] = parseFloat($("#dialog-" + parameter.name).val());
-                    }
-                    
-                    okFn(result);
-		    $( this ).dialog( "close" );
-		}
-	    },
-	    Cancel : function() {
-		$( this ).dialog( "close" );
-	    }
-	},
-	close: function() {
-	}
-    });
-
-    $("#dialog" ).dialog( "open" );
-}
-
 $(document).ready(function() {
 
     /*
@@ -268,21 +158,10 @@ $(document).ready(function() {
      */
     new Action("translate", "images/translate.png", 
                function(parameters) { create_transform("translate", ["dx", "dy", "dz"]); }).render($("#transforms"));
-    /*new Action("scale", "images/scale.png", 
-               [{name: "x", label: "X"},
-                {name: "y", label: "Y"},
-                {name: "z", label: "Z"},
-                {name: "factor", label: "Factor"},],
-               function(parameters) { transform(parameters, "scale"); }).render($("#transforms"));
+    new Action("scale", "images/scale.png", 
+               function(parameters) { create_transform("scale", ["x", "y", "z", "factor"]); }).render($("#transforms"));
     new Action("rotate", "images/rotate.png", 
-               [{name: "x", label: "Position X"},
-                {name: "y", label: "Position Y"},
-                {name: "z", label: "Position Z"},
-                {name: "vx", label: "Axis X"},
-                {name: "vy", label: "Axis Y"},
-                {name: "vz", label: "Axis Z"},
-                {name: "angle", label: "Angle (deg)"},],
-               function(parameters) { transform(parameters, "rotate"); }).render($("#transforms"));*/
+               function(parameters) { create_transform("rotate", ["px", "py", "pz", "vx", "vy", "vz", "angle"]); }).render($("#transforms"));
 
 
 });

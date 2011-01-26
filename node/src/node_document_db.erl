@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -export([start_link/0, stop/0]).
--export([raw_geom_record/1, create/1, tesselation/1]).
+-export([raw_geom_record/1, create/1, update/2, tesselation/1]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                              Public API                                  %%%
@@ -18,6 +18,9 @@ raw_geom_record(Id) ->
 
 create(Geometry) ->
     gen_server:call(?MODULE, {create, Geometry}).
+update(Id, Geometry) ->
+    gen_server:call(?MODULE, {update, Id, Geometry}).
+
 tesselation(Id) ->
     gen_server:call(?MODULE, {tesselation, Id}).
     
@@ -45,6 +48,13 @@ handle_call({create, Geometry}, _From, State) ->
     Tesselation = create_type(Id, GeomType, Geometry),
     {reply, Id, [{Id, #geom_doc{ geometry = Geometry,
                                  tesselation = Tesselation }}|State]};
+handle_call({update, Id, Geometry}, _From, State) ->
+    {struct, GeomProps} = Geometry,
+    {<<"type">>, GeomType} = lists:keyfind(<<"type">>, 1, GeomProps),
+    Tesselation = create_type(Id, GeomType, Geometry),
+    {reply, Id, lists:keyreplace(Id, 1, State, {Id, #geom_doc{ geometry = Geometry,
+                                                               tesselation = Tesselation }})};
+
 
 handle_call({tesselation, Id} , _From, State) ->
     Reply = case lists:keyfind(Id, 1, State) of

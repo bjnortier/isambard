@@ -20,6 +20,7 @@
 #include <BRepAlgoAPI_Fuse.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
 #include <BRepAlgoAPI_Common.hxx>
+#include <BRepBuilderAPI_Transform.hxx>
 
 
 #include <gp.hxx>
@@ -144,6 +145,101 @@ double get_double(mValue value) {
     }
 }
 
+#pragma mark Transforms
+
+TopoDS_Shape translate(map<string, mValue> transform, TopoDS_Shape shape) {
+    map< string, mValue > parameters = transform["parameters"].get_obj();
+    mValue dx = parameters["dx"];
+    mValue dy = parameters["dy"];
+    mValue dz = parameters["dz"];
+    
+    gp_Trsf transformation = gp_Trsf();
+    transformation.SetTranslation(gp_Vec(get_double(dx), get_double(dy), get_double(dz)));
+    
+    // Force copy
+    BRepBuilderAPI_Transform brep_transform(shape, transformation, true);
+    TopoDS_Shape transformed_shape = brep_transform.Shape();
+        
+    return transformed_shape;
+}
+
+TopoDS_Shape scale(map<string, mValue> transform, TopoDS_Shape shape) {
+    map< string, mValue > parameters = transform["parameters"].get_obj();
+    mValue x = parameters["x"];
+    mValue y = parameters["y"];
+    mValue z = parameters["z"];
+    mValue factor = parameters["factor"];
+    
+    gp_Trsf transformation = gp_Trsf();
+    transformation.SetScale(gp_Pnt(get_double(x), 
+                                   get_double(y), 
+                                   get_double(z)), 
+                            get_double(factor));
+    
+    // Force copy
+    BRepBuilderAPI_Transform brep_transform(shape, transformation, true);
+    TopoDS_Shape transformed_shape = brep_transform.Shape();
+    
+    return transformed_shape;
+}
+
+TopoDS_Shape rotate(map<string, mValue> transform, TopoDS_Shape shape) {
+    map< string, mValue > parameters = transform["parameters"].get_obj();
+    mValue px = parameters["px"];
+    mValue py = parameters["py"];
+    mValue pz = parameters["pz"];
+    mValue vx = parameters["vx"];
+    mValue vy = parameters["vy"];
+    mValue vz = parameters["vz"];
+    mValue angle = parameters["angle"];
+    
+    gp_Trsf transformation = gp_Trsf();
+    transformation.SetRotation(gp_Ax1(gp_Pnt(get_double(px),
+                                             get_double(py),
+                                             get_double(pz)), 
+                                      gp_Dir(get_double(vx),
+                                             get_double(vy),
+                                             get_double(vz))), 
+                               get_double(angle)/180*M_PI);
+    
+    // Force copy
+    BRepBuilderAPI_Transform brep_transform(shape, transformation, true);
+    TopoDS_Shape transformed_shape = brep_transform.Shape();
+    
+    return transformed_shape;
+}
+
+
+TopoDS_Shape applyTransform(map<string, mValue> transform, TopoDS_Shape shape) {
+    mValue transformType = transform["type"];
+    if (!transformType.is_null() && (transformType.type() == str_type) && (transformType.get_str() == string("translate"))) {
+        return translate(transform, shape);
+    }
+    if (!transformType.is_null() && (transformType.type() == str_type) && (transformType.get_str() == string("scale"))) {
+        return scale(transform, shape);
+    }
+    if (!transformType.is_null() && (transformType.type() == str_type) && (transformType.get_str() == string("rotate"))) {
+        return rotate(transform, shape);
+    }
+    
+    return shape;
+}
+
+TopoDS_Shape applyTransforms(TopoDS_Shape shape, map< string, mValue > geometry) {
+    TopoDS_Shape transformedShape = shape;
+    if (!geometry["transforms"].is_null() && (geometry["transforms"].type() == array_type)) {
+        mArray transforms = geometry["transforms"].get_array();
+        vector< mValue >::iterator it;
+        for (unsigned int k = 0; k < transforms.size(); ++k) {
+            mValue transform2 = transforms[k];
+            transformedShape = applyTransform(transform2.get_obj(), transformedShape);
+        }
+    } 
+    return transformedShape;
+}
+    
+#pragma mark Primitives
+
 mValue create_cuboid(string id, map< string, mValue > geometry) {
     map< string, mValue > parameters = geometry["parameters"].get_obj();
     mValue width = parameters["width"];
@@ -158,7 +254,8 @@ mValue create_cuboid(string id, map< string, mValue > geometry) {
         TopoDS_Shape shape = BRepPrimAPI_MakeBox(get_double(width), 
                                                  get_double(depth), 
                                                  get_double(height)).Shape();
-        shapes[id] = shape;
+        
+        shapes[id] = applyTransforms(shape, geometry);
         return tesselate(id);
     }
     return  mValue("invalid geometry parameters");
@@ -169,7 +266,7 @@ mValue create_sphere(string id, map< string, mValue > geometry) {
     mValue radius = parameters["radius"];
     if (!radius.is_null() && ((radius.type() == real_type) || (radius.type() == int_type))) {
         TopoDS_Shape shape = BRepPrimAPI_MakeSphere(get_double(radius)).Shape();
-        shapes[id] = shape;
+        shapes[id] = applyTransforms(shape, geometry);
         return tesselate(id);
     }
     return  mValue("invalid geometry parameters");
@@ -185,7 +282,7 @@ mValue create_cylinder(string id, map< string, mValue > geometry) {
         
         TopoDS_Shape shape = BRepPrimAPI_MakeCylinder(get_double(radius), 
                                                       get_double(height)).Shape();
-        shapes[id] = shape;
+        shapes[id] = applyTransforms(shape, geometry);
         return tesselate(id);
     }
     return  mValue("invalid geometry parameters");
@@ -205,7 +302,7 @@ mValue create_cone(string id, map< string, mValue > geometry) {
         TopoDS_Shape shape = BRepPrimAPI_MakeCone(get_double(bottom_radius), 
                                                   get_double(top_radius), 
                                                   get_double(height)).Shape();
-        shapes[id] = shape;
+        shapes[id] = applyTransforms(shape, geometry);
         return tesselate(id);
     }
     return  mValue("invalid geometry parameters");
@@ -229,7 +326,7 @@ mValue create_wedge(string id, map< string, mValue > geometry) {
                                                    get_double(y), 
                                                    get_double(z), 
                                                    get_double(x2)).Shape();
-        shapes[id] = shape;
+        shapes[id] = applyTransforms(shape, geometry);
         return tesselate(id);
     }
     return  mValue("invalid geometry parameters");
@@ -245,7 +342,7 @@ mValue create_torus(string id, map< string, mValue > geometry) {
         
         TopoDS_Shape shape = BRepPrimAPI_MakeTorus(get_double(r1), 
                                                    get_double(r2)).Shape();
-        shapes[id] = shape;
+        shapes[id] = applyTransforms(shape, geometry);
         return tesselate(id);
     }
     return  mValue("invalid geometry parameters");
@@ -263,8 +360,8 @@ mValue create_union(string id, map< string, mValue > geometry) {
         TopoDS_Shape shape_b = shapes[path_b];
         
         
-        TopoDS_Shape union_shape = BRepAlgoAPI_Fuse(shape_a, shape_b).Shape();
-        shapes[id] = union_shape;
+        TopoDS_Shape boolean_shape = BRepAlgoAPI_Fuse(shape_a, shape_b).Shape();
+        shapes[id] = applyTransforms(boolean_shape, geometry);
         return tesselate(id);
     }
     return mValue("invalid union parameters");
@@ -282,8 +379,8 @@ mValue create_subtract(string id, map< string, mValue > geometry) {
         TopoDS_Shape shape_b = shapes[path_b];
         
         // It makes more sense to when selecting 'subtract A FROM B'
-        TopoDS_Shape union_shape = BRepAlgoAPI_Cut(shape_b, shape_a).Shape();
-        shapes[id] = union_shape;
+        TopoDS_Shape boolean_shape = BRepAlgoAPI_Cut(shape_b, shape_a).Shape();
+        shapes[id] = applyTransforms(boolean_shape, geometry);
         return tesselate(id);
     }
     return mValue("invalid union parameters");
@@ -301,8 +398,8 @@ mValue create_intersect(string id, map< string, mValue > geometry) {
         TopoDS_Shape shape_b = shapes[path_b];
         
         
-        TopoDS_Shape union_shape = BRepAlgoAPI_Common(shape_a, shape_b).Shape();
-        shapes[id] = union_shape;
+        TopoDS_Shape boolean_shape = BRepAlgoAPI_Common(shape_a, shape_b).Shape();
+        shapes[id] = applyTransforms(boolean_shape, geometry);
         return tesselate(id);
     }
     return mValue("invalid union parameters");
@@ -314,6 +411,7 @@ mValue create_geometry(string id, map< string, mValue > geometry) {
     /*
      * Primitives
      */
+    TopoDS_Shape shape;
     if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("cuboid"))) {
         return create_cuboid(id, geometry);
     } 

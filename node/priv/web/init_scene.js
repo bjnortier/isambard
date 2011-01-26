@@ -44,7 +44,7 @@ var scene = new SceneJS.Scene(
                     fovy : 5.0,
                     aspect : 1.47,
                     near : 0.10,
-                    far : 300.0
+                    far : 3000.0
                 }
             },
             new SceneJS.Light(

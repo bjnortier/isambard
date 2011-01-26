@@ -13,6 +13,10 @@ function GeomDocument() {
         this.notify({remove: node});
     }
 
+    this.update = function(node) {
+        this.notify({update: node});
+    }
+
     this.removeByPath = function(path) {
         var toRemove = [];
         for (var i in this.rootNodes) {

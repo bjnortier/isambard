@@ -14,14 +14,10 @@ function transform_geom_command(geomNode, transform) {
                     type: 'GET',
                     url: path,
                     success: function(tesselation) {
-                        geom_doc.remove(prototype);
-                        geom_doc.add(new GeomNode({
-                            type: geometry.type,
-                            path: path,
-                            parameters: geometry.parameters}));
+                        geom_doc.update(geomNode);
 
+                        SceneJS.withNode(geomNode.path).parent().remove({node: geomNode.path});
                         add_to_scene(path, tesselation);
-
                     }
                 });
             }
@@ -143,6 +139,7 @@ function update_geom_doc_tree() {
                 $('#transform-ok').click(function() {
                     for (key in transform.parameters) {
                         transform.parameters[key] = parseFloat($('#' + key).val());
+                        transform.prototype = false;
                     }
                     var cmd = transform_geom_command(geomNode, transform);
                     command_stack.execute(cmd);

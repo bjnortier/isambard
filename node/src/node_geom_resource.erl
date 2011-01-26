@@ -20,7 +20,7 @@
 init([]) -> {ok, #context{}}.
 
 allowed_methods(ReqData, Context) -> 
-    {['GET', 'POST'], ReqData, Context}.
+    {['GET', 'POST', 'PUT'], ReqData, Context}.
 
 resource_exists(ReqData, Context) ->
     {true, ReqData, Context}.
@@ -44,15 +44,27 @@ post_is_create(ReqData, Context) ->
     {true, ReqData, Context}.
 
 create_path(ReqData, Context) ->
+    %% FIXME: This is not the correct path
     {"/geom/1", ReqData, Context}. 
 
 accept_content(ReqData, Context) ->
-    Id = node_document_db:create(Context#context.json_obj),
-    Path = io_lib:format("/geom/~s", [Id]),
-    io:format("created geometry: ~s~n", [Path]),
-    ReqData1 = wrq:set_resp_body(
-                 mochijson2:encode({struct, [{<<"path">>, iolist_to_binary(Path)}]}), ReqData),
-    {true, ReqData1, Context}.
+    case wrq:method(ReqData) of
+        'POST' ->
+            Id = node_document_db:create(Context#context.json_obj),
+            Path = io_lib:format("/geom/~s", [Id]),
+            io:format("created geometry: ~s~n", [Path]),
+            ReqData1 = wrq:set_resp_body(
+                         mochijson2:encode({struct, [{<<"path">>, iolist_to_binary(Path)}]}), ReqData),
+            {true, ReqData1, Context};
+        'PUT' ->
+            Id = Context#context.id,
+            Id = node_document_db:update(Context#context.id, Context#context.json_obj),
+            Path = io_lib:format("/geom/~s", [Id]),
+            io:format("updated geometry: ~s~n", [Path]),
+            ReqData1 = wrq:set_resp_body(
+                         mochijson2:encode({struct, [{<<"path">>, iolist_to_binary(Path)}]}), ReqData),
+            {true, ReqData1, Context}
+    end.
 
 
 malformed_request(ReqData, Context) ->
@@ -67,9 +79,17 @@ malformed_request(ReqData, Context, 'GET') ->
         Id when is_list(Id) ->
             {false, ReqData, Context#context{id = Id}}
     end;
-
-%% TODO: Geometry parameters must be floats, not ints
+malformed_request(ReqData, Context, 'PUT') ->
+    case wrq:path_info(id, ReqData) of
+        undefined ->
+            {true, wrq:set_resp_body("missing id: /geom/<id>", ReqData), Context};
+        Id when is_list(Id) ->
+            malformed_json_request(ReqData, Context#context{id = Id})
+    end;
 malformed_request(ReqData, Context, 'POST') ->
+    malformed_json_request(ReqData, Context).
+
+malformed_json_request(ReqData, Context) ->
     Body = wrq:req_body(ReqData),
     try 
 	JSONObj = mochijson2:decode(Body),
