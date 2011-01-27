@@ -23,6 +23,7 @@ allowed_methods(ReqData, Context) ->
     {['GET', 'POST', 'PUT'], ReqData, Context}.
 
 resource_exists(ReqData, Context) ->
+    %% TODO: Ask document_db if geom exists
     {true, ReqData, Context}.
 
 content_types_provided(ReqData, Context) ->

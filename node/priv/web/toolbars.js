@@ -122,10 +122,13 @@ function boolean(type) {
 $(document).ready(function() {
 
     /*
-     * Edit
+     * Basic
      */
     new Action("delete", "images/trash.png", 
                function(parameters) { delete_geom(); }).render($("#edit"));
+    $('#edit').append('<a id="action_stl" href=""><img src="images/stl.png" alt="stl"></img></a>');
+    $('#action_stl').attr('href', 'javascript: alert("select one object"); return false;');
+        
     
     /*
      * Primitives

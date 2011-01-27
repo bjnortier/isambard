@@ -15,7 +15,7 @@ function transform_geom_command(geomNode, transform) {
                     url: path,
                     success: function(tesselation) {
                         geom_doc.update(geomNode);
-
+                        Interaction.unselect();
                         SceneJS.withNode(geomNode.path).parent().remove({node: geomNode.path});
                         add_to_scene(path, tesselation);
                     }
@@ -160,6 +160,6 @@ geom_doc.addListener(function(event) {
 });
 
 /* Debug */
-var cmd = create_geom_command(null, {type: 'sphere',
+/*var cmd = create_geom_command(null, {type: 'sphere',
                                      parameters: {radius: 1.0}});
-command_stack.execute(cmd);
+command_stack.execute(cmd);*/

@@ -22,6 +22,7 @@
 #include <BRepAlgoAPI_Common.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 
+#include <StlAPI_Writer.hxx>
 
 #include <gp.hxx>
 #include <gp_Pnt.hxx>
@@ -374,11 +375,11 @@ mValue create_subtract(string id, map< string, mValue > geometry) {
     if ((parameters["a"].type() == str_type)
         &&
         (parameters["b"].type() == str_type)) {
-        string path_a = parameters["a"].get_str();
-        string path_b = parameters["b"].get_str();
+        string id_a = parameters["a"].get_str();
+        string id_b = parameters["b"].get_str();
         
-        TopoDS_Shape shape_a = shapes[path_a];
-        TopoDS_Shape shape_b = shapes[path_b];
+        TopoDS_Shape shape_a = shapes[id_a];
+        TopoDS_Shape shape_b = shapes[id_b];
         
         // It makes more sense to when selecting 'subtract A FROM B'
         TopoDS_Shape boolean_shape = BRepAlgoAPI_Cut(shape_b, shape_a).Shape();
@@ -514,6 +515,26 @@ int main (int argc, char *argv[]) {
                     
                     
                     mValue response = create_geometry(id.get_str(), mObject(geometry.get_obj()));
+                    string output = write(response);
+                    write_cmd(output.c_str(), output.size());
+                    continue;
+                }
+                
+                mValue filename = objMap["filename"];
+                if (!msgType.is_null() && (msgType.type() == str_type) && (msgType.get_str() == string("stl"))
+                    && 
+                    !id.is_null() && (id.type() == str_type)
+                    && 
+                    !filename.is_null() && (filename.type() == str_type)) {
+                    
+                    string filenameStr = filename.get_str();
+                    TopoDS_Shape shape = shapes[id.get_str()];
+                    
+                    StlAPI_Writer writer;
+                    writer.Write(shape, filenameStr.c_str());
+                    
+                    // TODO: Error handling in response
+                    mValue response = mValue("ok");
                     string output = write(response);
                     write_cmd(output.c_str(), output.size());
                     continue;

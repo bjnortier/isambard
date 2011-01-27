@@ -1,11 +1,22 @@
-var Interaction = {}
-
+var Interaction = {};
 Interaction.selected = [];
+
+Observable.makeObservable(Interaction);
+Interaction.addListener(function() {
+    
+    if (Interaction.selected.length == 1) {
+        var pattern = /^\/geom\/(.*)$/;
+        var id = Interaction.selected[0].match(pattern)[1];
+        $('#action_stl').attr('href', '/stl/' + id); 
+    } else {
+        $('#action_stl').attr('href', 'javascript: alert("select one object"); return false;');
+    }
+});
+
 
 var picking = false;
 var pickHit = false;
 var shiftPicking = false;
-
 
 
 Interaction.beforePick = function() {
@@ -46,13 +57,16 @@ Interaction.picked = function(path) {
             Interaction.selectPath(path);
         }
     }
-    
 }
+
+
 
 Interaction.selectPath = function(path) {
     Interaction.selected.push(path);
     SceneJS.withNode(path).set("baseColor", { r: 1.0, g: 1.0, b: 0.0 });
     console.log("selected:" + Interaction.selected);
+
+    Interaction.notify("updated");
 }
 
 Interaction.deselectPath = function(path) {
@@ -65,6 +79,8 @@ Interaction.deselectPath = function(path) {
     Interaction.selected = newSelected;
     SceneJS.withNode(path).set("baseColor", { r: 0.5, g: 1.0, b: 0.0 });
     console.log("selected:" + Interaction.selected);
+
+    Interaction.notify("updated");
 }
 
 Interaction.unselect = function() {
@@ -72,6 +88,8 @@ Interaction.unselect = function() {
         SceneJS.withNode(Interaction.selected[i]).set("baseColor", { r: 0.5, g: 1.0, b: 0.0 });
     }
     Interaction.selected = [];
+
+    Interaction.notify("updated");
 }
 
 Interaction.pickable = function(path) {

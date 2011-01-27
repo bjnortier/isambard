@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -export([start_link/0, stop/0]).
--export([raw_geom_record/1, create/1, update/2, tesselation/1]).
+-export([exists/1, raw_geom_record/1, create/1, update/2, tesselation/1, stl/1]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                              Public API                                  %%%
@@ -13,16 +13,18 @@ start_link() ->
 stop() ->
     gen_server:call(?MODULE, stop).
 
+exists(Id) ->
+    gen_server:call(?MODULE, {exists, Id}).
 raw_geom_record(Id) ->
     gen_server:call(?MODULE, {raw_geom_record, Id}).
-
 create(Geometry) ->
     gen_server:call(?MODULE, {create, Geometry}).
 update(Id, Geometry) ->
     gen_server:call(?MODULE, {update, Id, Geometry}).
-
 tesselation(Id) ->
     gen_server:call(?MODULE, {tesselation, Id}).
+stl(Id) ->
+    gen_server:call(?MODULE, {stl, Id}).
     
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -34,13 +36,18 @@ tesselation(Id) ->
 init([]) ->
     {ok, []}.
 
+handle_call({exists, Id}, _From, State) ->
+    Reply = case lists:keyfind(Id, 1, State) of
+                {Id, _} -> true;
+                false -> false
+            end,
+    {reply, Reply, State};
 handle_call({raw_geom_record, Id}, _From, State) ->
     Reply = case lists:keyfind(Id, 1, State) of
                 {Id, Record} -> Record;
                 false -> undefined
             end,
     {reply, Reply, State};
-    
 handle_call({create, Geometry}, _From, State) ->
     {struct, GeomProps} = Geometry,
     {<<"type">>, GeomType} = lists:keyfind(<<"type">>, 1, GeomProps),
@@ -54,9 +61,7 @@ handle_call({update, Id, Geometry}, _From, State) ->
     Tesselation = create_type(Id, GeomType, Geometry),
     {reply, Id, lists:keyreplace(Id, 1, State, {Id, #geom_doc{ geometry = Geometry,
                                                                tesselation = Tesselation }})};
-
-
-handle_call({tesselation, Id} , _From, State) ->
+handle_call({tesselation, Id}, _From, State) ->
     Reply = case lists:keyfind(Id, 1, State) of
                  {Id, Record} -> 
                      Record#geom_doc.tesselation;
@@ -64,7 +69,16 @@ handle_call({tesselation, Id} , _From, State) ->
                      undefined
             end,
     {reply, Reply, State};
-
+handle_call({stl, Id}, _From, State) ->
+    Filename = "scratch/" ++ Id ++ ".stl",
+    Msg = {struct, [{<<"type">>, <<"stl">>},
+                    {<<"id">>, list_to_binary(Id)},
+                    {<<"filename">>, list_to_binary(Filename)}
+                   ]},
+    %% TODO: Error handling
+    "\"ok\"" = node_worker_server:call(mochijson2:encode(Msg)),
+    {ok, STL} = file:read_file(Filename),
+    {reply, STL, State};
 handle_call(stop, _From, State) ->
     {stop, normal, stopped, State};
 handle_call(_Request, _From, State) ->
