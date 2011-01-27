@@ -116,10 +116,16 @@ create_boolean(Id, Type, Geometry) ->
     {<<"b">>, PathB} = lists:keyfind(<<"b">>, 1, ParamProps),
     "/geom/" ++ IdA = binary_to_list(PathA),
     "/geom/" ++ IdB = binary_to_list(PathB),
+    Transforms = case lists:keyfind(<<"transforms">>, 1, GeomProps) of
+                     false -> [];
+                     {<<"transforms">>, T} -> T
+                 end,
     worker_create(Id, {struct, [{<<"type">>, Type},
                                 {<<"parameters">>, {struct,
                                                     [{<<"a">>, list_to_binary(IdA)},                                
-                                                     {<<"b">>, list_to_binary(IdB)}]}}]}).
+                                                     {<<"b">>, list_to_binary(IdB)}]}},
+                                {<<"transforms">>, Transforms}
+                               ]}).
 worker_create(Id, Geometry) ->
     Msg = {struct, [{<<"type">>, <<"create">>},
                     {<<"id">>, list_to_binary(Id)},

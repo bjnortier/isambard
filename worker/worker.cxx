@@ -348,6 +348,8 @@ mValue create_torus(string id, map< string, mValue > geometry) {
     return  mValue("invalid geometry parameters");
 }
 
+#pragma mark Boolean
+
 mValue create_union(string id, map< string, mValue > geometry) {
     map< string, mValue > parameters = geometry["parameters"].get_obj();
     if ((parameters["a"].type() == str_type)
