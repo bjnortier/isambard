@@ -95,7 +95,7 @@ function renderNode(geomNode) {
     // Children
     var childTables = geomNode.children.map(renderNode);
     
-    var template = '<table><tr><td>{{type}}</td></tr><tr><td>{{{paramsTable}}}</td></tr>{{#prototype}}<tr><td><input id="modal-ok" type="submit" value="Ok"/><input id="modal-cancel" type="submit" value="Cancel"/></td></tr>{{/prototype}}{{#transforms}}<tr><td>{{{.}}}</tr></td>{{/transforms}}{{#children}}<tr><td>{{{.}}}</td></td>{{/children}}</table>';
+    var template = '<table><tr><td><img class="show-hide-siblings siblings-showing" src="/images/arrow_showing.png"></img>{{type}}</td></tr><tr><td>{{{paramsTable}}}</td></tr>{{#prototype}}<tr><td><input id="modal-ok" type="submit" value="Ok"/><input id="modal-cancel" type="submit" value="Cancel"/></td></tr>{{/prototype}}{{#transforms}}<tr><td>{{{.}}}</tr></td>{{/transforms}}{{#children}}<tr><td>{{{.}}}</td></td>{{/children}}</table>';
     var view = {type: geomNode.type,
                 prototype: geomNode.prototype,
                 paramsTable: paramsTable,
@@ -152,6 +152,22 @@ function update_geom_doc_tree() {
     };
 
     geom_doc.iterate(geomNodeRenderer);
+    $('.show-hide-siblings').html('hide');
+    $('.show-hide-siblings').click(function() {
+        if ($(this).hasClass('siblings-showing')) {
+            $(this).attr('src', '/images/arrow_hidden.png');
+            $(this).removeClass('siblings-showing');
+            var otherRows = $(this).parent().parent().siblings();
+            otherRows.hide();
+        } else {
+            $(this).attr('src', '/images/arrow_showing.png');
+            $(this).addClass('siblings-showing');
+            var otherRows = $(this).parent().parent().siblings();
+            otherRows.show();
+        }
+        
+        return false;
+    });
 };
 
 

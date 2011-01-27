@@ -133,37 +133,37 @@ $(document).ready(function() {
     /*
      * Primitives
      */
-    new Action("cuboid", "images/cuboid.png", 
+    new Action("cuboid", "/images/cuboid.png", 
                function() { create_primitive("cuboid",  ["width", "depth", "height"]); }).render($("#primitives"));
-    new Action("sphere", "images/sphere.png", 
+    new Action("sphere", "/images/sphere.png", 
                function(parameters) { create_primitive("sphere", ["radius"]); }).render($("#primitives"));
-    new Action("cylinder", "images/cylinder.png", 
+    new Action("cylinder", "/images/cylinder.png", 
                function(parameters) { create_primitive("cylinder", ["radius", "height"]); }).render($("#primitives"));
-    new Action("cone", "images/cone.png", 
+    new Action("cone", "/images/cone.png", 
                function(parameters) { create_primitive("cone", ["bottom_radius", "top_radius", "height"]); }).render($("#primitives"));
-     new Action("wedge", "images/wedge.png", 
+     new Action("wedge", "/images/wedge.png", 
                 function(parameters) { create_primitive("wedge", ["x1", "x2", "y", "z"]); }).render($("#primitives"));
-    new Action("torus", "images/torus.png", 
+    new Action("torus", "/images/torus.png", 
                function(parameters) { create_primitive("torus", ["r1", "r2"]); }).render($("#primitives"));
 
     /*
      * Booleans
      */
-    new Action("union", "images/union.png", 
+    new Action("union", "/images/union.png", 
                function(parameters) { boolean("union"); }).render($("#boolean"));
-    new Action("subtract", "images/diff.png", 
+    new Action("subtract", "/images/diff.png", 
                function(parameters) { boolean("subtract"); }).render($("#boolean"));
-    new Action("intersect", "images/intersect.png", 
+    new Action("intersect", "/images/intersect.png", 
                function(parameters) { boolean("intersect"); }).render($("#boolean"));
     
     /*
      * Transformations
      */
-    new Action("translate", "images/translate.png", 
+    new Action("translate", "/images/translate.png", 
                function(parameters) { create_transform("translate", ["dx", "dy", "dz"]); }).render($("#transforms"));
-    new Action("scale", "images/scale.png", 
+    new Action("scale", "/images/scale.png", 
                function(parameters) { create_transform("scale", ["x", "y", "z", "factor"]); }).render($("#transforms"));
-    new Action("rotate", "images/rotate.png", 
+    new Action("rotate", "/images/rotate.png", 
                function(parameters) { create_transform("rotate", ["px", "py", "pz", "vx", "vy", "vz", "angle"]); }).render($("#transforms"));
 
 
