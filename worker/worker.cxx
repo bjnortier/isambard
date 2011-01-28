@@ -56,16 +56,12 @@ mValue tesselate(string id) {
     TopoDS_Shape shape = shapes[id];
     BRepMesh().Mesh(shape, 0.0125);
     
-    mArray vertex_array;
     mArray indices;
     mArray positions;
     mArray normalArr;
     
-    map< int, gp_Vec > normals = map< int, gp_Vec >();
-    map< int, vector< int > > connected_triangles = map< int, vector< int > >();
-    
     TopExp_Explorer Ex; 
-    int index = 0;
+    int index_offset = 0;
     for (Ex.Init(shape,TopAbs_FACE); Ex.More(); Ex.Next()) { 
         
         TopoDS_Face Face = TopoDS::Face(Ex.Current());
@@ -75,6 +71,17 @@ mValue tesselate(string id) {
         TColgp_Array1OfDir the_normal(facing->Nodes().Lower(), facing->Nodes().Upper());
         Poly_Connect connect(facing);
         StdPrs_ToolShadedShape().Normal(Face, connect, the_normal);
+        
+        for (int i = 1; i <= facing->NbNodes(); ++i) {
+            gp_Pnt vertex = facing->Nodes().Value(i);
+            positions.push_back(vertex.X());
+            positions.push_back(vertex.Y());
+            positions.push_back(vertex.Z());
+            
+            normalArr.push_back(the_normal(i).X());
+            normalArr.push_back(the_normal(i).Y());
+            normalArr.push_back(the_normal(i).Z());
+        }
         
         for (int i = 1; i <= facing->NbTriangles(); ++i) {
             Poly_Triangle triangle = facing->Triangles().Value(i);
@@ -86,37 +93,12 @@ mValue tesselate(string id) {
             gp_Pnt vertex2 = facing->Nodes().Value(index2);
             gp_Pnt vertex3 = facing->Nodes().Value(index3);
             
-            
-            positions.push_back(vertex1.X());
-            positions.push_back(vertex1.Y());
-            positions.push_back(vertex1.Z());
-            positions.push_back(vertex2.X());
-            positions.push_back(vertex2.Y());
-            positions.push_back(vertex2.Z());
-            positions.push_back(vertex3.X());
-            positions.push_back(vertex3.Y());
-            positions.push_back(vertex3.Z());
-            
-            
-            indices.push_back(index++);
-            indices.push_back(index++);
-            indices.push_back(index++);
-            
-            normalArr.push_back(the_normal(index1).X());
-            normalArr.push_back(the_normal(index1).Y());
-            normalArr.push_back(the_normal(index1).Z());
-            
-            normalArr.push_back(the_normal(index2).X());
-            normalArr.push_back(the_normal(index2).Y());
-            normalArr.push_back(the_normal(index2).Z());
-            
-            normalArr.push_back(the_normal(index3).X());
-            normalArr.push_back(the_normal(index3).Y());
-            normalArr.push_back(the_normal(index3).Z());
-            
+            indices.push_back(index_offset + index1 - 1);
+            indices.push_back(index_offset + index2 - 1);
+            indices.push_back(index_offset + index3 - 1);
         }
         
-        
+        index_offset += facing->NbNodes();    
     }
     
     mObject result;
