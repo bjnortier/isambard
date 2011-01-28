@@ -91,11 +91,17 @@ function idForGeomNode(geomNode) {
 function renderNode(geomNode) {
     // Params
     var paramsArr = [];
-    for (key in geomNode.parameters) {
-        paramsArr.push({key: key,
-                        value: geomNode.parameters[key],
-                        prototype: geomNode.prototype
-                       });
+    if (!((geomNode.type == 'union')
+          ||
+          (geomNode.type == 'subtract')
+          ||
+          (geomNode.type == 'subtract'))) {
+        for (key in geomNode.parameters) {
+            paramsArr.push({key: key,
+                            value: geomNode.parameters[key],
+                            prototype: geomNode.prototype
+                           });
+        }
     }
     var template = '<table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^prototype}}{{value}}{{/prototype}}{{#prototype}}<input id="{{key}}" type="text">{{/prototype}}</td></tr>{{/paramsArr}}</table>';
     var paramsTable = $.mustache(template, {paramsArr : paramsArr});
@@ -185,7 +191,7 @@ function TreeView() {
             var nodeTable = renderNode(geomNode);
 
             this.domNodeLookup[geomNode] = nodeTable;
-            $('#geom-model-doc').append(nodeTable);
+            $('#geom-model-doc').prepend(nodeTable);
             this.addEvents(geomNode);
         }
 
