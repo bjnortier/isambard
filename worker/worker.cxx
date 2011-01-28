@@ -31,6 +31,11 @@
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
 #include <Poly_Triangulation.hxx>
+#include <TColgp_Array1OfDir.hxx>
+#include <Poly_Connect.hxx>
+#include <StdPrs_ToolShadedShape.hxx>
+
+
 
 // Spirit
 #include "json_spirit.h"
@@ -60,12 +65,16 @@ mValue tesselate(string id) {
     map< int, vector< int > > connected_triangles = map< int, vector< int > >();
     
     TopExp_Explorer Ex; 
-    int index_offset = 0;
+    int index = 0;
     for (Ex.Init(shape,TopAbs_FACE); Ex.More(); Ex.Next()) { 
         
         TopoDS_Face Face = TopoDS::Face(Ex.Current());
         TopLoc_Location Location = TopLoc_Location();
         Handle(Poly_Triangulation) facing = BRep_Tool().Triangulation(Face,Location);
+        
+        TColgp_Array1OfDir the_normal(facing->Nodes().Lower(), facing->Nodes().Upper());
+        Poly_Connect connect(facing);
+        StdPrs_ToolShadedShape().Normal(Face, connect, the_normal);
         
         for (int i = 1; i <= facing->NbTriangles(); ++i) {
             Poly_Triangle triangle = facing->Triangles().Value(i);
@@ -77,54 +86,36 @@ mValue tesselate(string id) {
             gp_Pnt vertex2 = facing->Nodes().Value(index2);
             gp_Pnt vertex3 = facing->Nodes().Value(index3);
             
-            gp_Vec vec12 = gp_Vec(vertex1, vertex2);
-            gp_Vec vec23 = gp_Vec(vertex2, vertex3);
+            
+            positions.push_back(vertex1.X());
+            positions.push_back(vertex1.Y());
+            positions.push_back(vertex1.Z());
+            positions.push_back(vertex2.X());
+            positions.push_back(vertex2.Y());
+            positions.push_back(vertex2.Z());
+            positions.push_back(vertex3.X());
+            positions.push_back(vertex3.Y());
+            positions.push_back(vertex3.Z());
             
             
-            gp_Vec cross_product = vec12.Crossed(vec23);
+            indices.push_back(index++);
+            indices.push_back(index++);
+            indices.push_back(index++);
             
-            double cross_magnitude = cross_product.Magnitude();
-            if (cross_magnitude > 0) {
-                gp_Vec normal = cross_product.Normalized();
-                normals[i] = normal;
-            }
+            normalArr.push_back(the_normal(index1).X());
+            normalArr.push_back(the_normal(index1).Y());
+            normalArr.push_back(the_normal(index1).Z());
             
-            // Step 2 - created connected lookup
-            connected_triangles[index1].push_back(i);
-            connected_triangles[index2].push_back(i);
-            connected_triangles[index3].push_back(i);
+            normalArr.push_back(the_normal(index2).X());
+            normalArr.push_back(the_normal(index2).Y());
+            normalArr.push_back(the_normal(index2).Z());
             
-            indices.push_back(index1 - 1 + index_offset);
-            indices.push_back(index2 - 1 + index_offset);
-            indices.push_back(index3 - 1 + index_offset);
+            normalArr.push_back(the_normal(index3).X());
+            normalArr.push_back(the_normal(index3).Y());
+            normalArr.push_back(the_normal(index3).Z());
+            
         }
         
-        for (int i = 1; i <= facing->NbNodes(); ++i) {
-            gp_Pnt vertex = facing->Nodes().Value(i);
-            int count = 0;
-            vector< int > connected = connected_triangles[i];
-            vector< int >::iterator it;
-            
-            gp_Vec avg = gp_Vec(0.0, 0.0, 0.0);
-            for(it = connected.begin(); it != connected.end(); ++it) {
-                gp_Vec normal = normals[(*it)];
-                avg += normal;
-                ++count;
-            }
-            if (count > 0) {
-                avg /= (double)count;
-            }
-            
-            positions.push_back(vertex.X());
-            positions.push_back(vertex.Y());
-            positions.push_back(vertex.Z());
-            
-            normalArr.push_back(avg.X());
-            normalArr.push_back(avg.Y());
-            normalArr.push_back(avg.Z());
-        }
-        
-        index_offset += facing->NbNodes();
         
     }
     
