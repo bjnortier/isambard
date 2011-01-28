@@ -119,10 +119,6 @@ function renderNode(geomNode) {
 }
 
 
-
-
-
-
 function TreeView() {
 
     this.domNodeLookup = {};

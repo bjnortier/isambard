@@ -61,7 +61,7 @@ function GeomDocument() {
         var node = this.findByPath(path);
         if (node) {
             node.transforms.splice(node.transforms.indexOf(transform),1);
-            this.notify({updated: node});
+            this.notify({update: node});
         } else {
             throw(new Error('node with path "' + path + '" not found'));
         }
