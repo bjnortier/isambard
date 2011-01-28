@@ -71,9 +71,11 @@ function renderTransform(transform) {
                        });
     }
 
-    var template = '<table><tr><td><table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^prototype}}{{value}}{{/prototype}}{{#prototype}}<input id="{{key}}" type="text">{{/prototype}}</td></tr>{{/paramsArr}}</td></tr></table>{{#prototype}}<tr><td><input id="transform-ok" type="submit" value="Ok"/><input id="transform-cancel" type="submit" value="Cancel"/></td></tr>{{/prototype}}</table>';
-    var transformTable = $.mustache(template, {paramsArr: paramsArr,
-                                               prototype: transform.prototype});
+    var template = '<table><tr><td>{{type}}</td></tr><tr><td><table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^prototype}}{{value}}{{/prototype}}{{#prototype}}<input id="{{key}}" type="text">{{/prototype}}</td></tr>{{/paramsArr}}</td></tr></table>{{#prototype}}<tr><td><input id="transform-ok" type="submit" value="Ok"/><input id="transform-cancel" type="submit" value="Cancel"/></td></tr>{{/prototype}}</table>';
+    var transformTable = $.mustache(template, {
+        type: transform.type,
+        paramsArr: paramsArr,
+        prototype: transform.prototype});
     return transformTable;
 }
 
