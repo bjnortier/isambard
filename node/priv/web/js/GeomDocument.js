@@ -51,7 +51,7 @@ function GeomDocument() {
             }
 
             node.transforms.push(transform);
-            this.notify({updated: node});
+            this.notify({update: node});
         } else {
             throw(new Error('node eith path "' + path + '" not found'));
         }
@@ -63,7 +63,7 @@ function GeomDocument() {
             node.transforms.splice(node.transforms.indexOf(transform),1);
             this.notify({updated: node});
         } else {
-            throw(new Error('node eith path "' + path + '" not found'));
+            throw(new Error('node with path "' + path + '" not found'));
         }
     }
     
