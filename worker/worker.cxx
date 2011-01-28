@@ -74,9 +74,13 @@ mValue tesselate(string id) {
         
         for (int i = 1; i <= facing->NbNodes(); ++i) {
             gp_Pnt vertex = facing->Nodes().Value(i);
-            positions.push_back(vertex.X());
-            positions.push_back(vertex.Y());
-            positions.push_back(vertex.Z());
+            
+                
+            gp_Pnt transformedVtx = vertex.Transformed(Face.Location().Transformation());
+            
+            positions.push_back(transformedVtx.X());
+            positions.push_back(transformedVtx.Y());
+            positions.push_back(transformedVtx.Z());
             
             normalArr.push_back(the_normal(i).X());
             normalArr.push_back(the_normal(i).Y());
@@ -131,7 +135,7 @@ TopoDS_Shape translate(map<string, mValue> transform, TopoDS_Shape shape) {
     transformation.SetTranslation(gp_Vec(get_double(dx), get_double(dy), get_double(dz)));
     
     // Force copy
-    BRepBuilderAPI_Transform brep_transform(shape, transformation, true);
+    BRepBuilderAPI_Transform brep_transform(shape, transformation);
     TopoDS_Shape transformed_shape = brep_transform.Shape();
         
     return transformed_shape;
@@ -151,7 +155,7 @@ TopoDS_Shape scale(map<string, mValue> transform, TopoDS_Shape shape) {
                             get_double(factor));
     
     // Force copy
-    BRepBuilderAPI_Transform brep_transform(shape, transformation, true);
+    BRepBuilderAPI_Transform brep_transform(shape, transformation);
     TopoDS_Shape transformed_shape = brep_transform.Shape();
     
     return transformed_shape;
@@ -177,7 +181,7 @@ TopoDS_Shape rotate(map<string, mValue> transform, TopoDS_Shape shape) {
                                get_double(angle)/180*M_PI);
     
     // Force copy
-    BRepBuilderAPI_Transform brep_transform(shape, transformation, true);
+    BRepBuilderAPI_Transform brep_transform(shape, transformation);
     TopoDS_Shape transformed_shape = brep_transform.Shape();
     
     return transformed_shape;
