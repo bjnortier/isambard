@@ -5,11 +5,15 @@ Observable.makeObservable(Interaction);
 Interaction.addListener(function() {
     
     if (Interaction.selected.length == 1) {
+        $('#action_stl').unbind('click');
         var pattern = /^\/geom\/(.*)$/;
         var id = Interaction.selected[0].match(pattern)[1];
         $('#action_stl').attr('href', '/stl/' + id); 
     } else {
-        $('#action_stl').attr('href', 'javascript: alert("select one object"); return false;');
+        $('#action_stl').click(function() {
+            alert("select one object"); 
+            return false;
+        });
     }
 });
 
@@ -64,8 +68,6 @@ Interaction.picked = function(path) {
 Interaction.selectPath = function(path) {
     Interaction.selected.push(path);
     SceneJS.withNode(path).set("baseColor", { r: 1.0, g: 1.0, b: 0.0 });
-    console.log("selected:" + Interaction.selected);
-
     Interaction.notify("updated");
 }
 
