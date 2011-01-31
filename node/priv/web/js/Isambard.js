@@ -1,6 +1,55 @@
 var command_stack = new CommandStack();
 var geom_doc = new GeomDocument();
 
+function update_geom_command(geomNode) {
+    var updateChain = [geomNode];
+    var parent = geomNode.parent;
+    while(parent) {
+        updateChain.push(parent);
+        parent = parent.parent;
+    }
+    console.log('updateChain: ' + updateChain.map(function(node) { return node.path; }));
+    
+    var chainedPutFn = function() {
+        var nextNode = updateChain.splice(0,1)[0];
+        if (nextNode) {
+            $.ajax({
+                type: 'PUT',
+                url: nextNode.path,
+                contentType: 'application/json',
+                data: nextNode.json(),
+                success: function(nodeData) {
+                    nextNode.prototype = false;
+                    if (updateChain.length > 0) {
+                        chainedPutFn();
+                    } else {
+                        // No more -> update the root node
+                        $.ajax({
+                            type: 'GET',
+                            url: nextNode.path,
+                            success: function(tesselation) {
+                                geom_doc.update(nextNode);
+                                Interaction.unselect();
+                                SceneJS.withNode(nextNode.path).parent().remove({node: nextNode.path});
+                                add_to_scene(nextNode.path, tesselation);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+    }
+
+    var doFn = function() {
+        chainedPutFn();
+    };
+    var undoFn = function() {
+        throw Error('not implemented');
+    }
+    return new Command(doFn, undoFn);
+}
+
+
 function transform_geom_command(geomNode, transform) {
     var doFn = function() {
         $.ajax({
@@ -96,14 +145,18 @@ function renderNode(geomNode) {
           (geomNode.type == 'subtract')
           ||
           (geomNode.type == 'subtract'))) {
+
+        var id = idForGeomNode(geomNode);
         for (key in geomNode.parameters) {
+
             paramsArr.push({key: key,
                             value: geomNode.parameters[key],
+                            clazz: 'edit-geom target-' + id,
                             prototype: geomNode.prototype
                            });
         }
     }
-    var template = '<table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^prototype}}{{value}}{{/prototype}}{{#prototype}}<input id="{{key}}" type="text">{{/prototype}}</td></tr>{{/paramsArr}}</table>';
+    var template = '<table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^prototype}}<span class="{{clazz}}">{{value}}</span>{{/prototype}}{{#prototype}}<input id="{{key}}" type="text" value="{{value}}"/>{{/prototype}}</td></tr>{{/paramsArr}}</table>';
     var paramsTable = $.mustache(template, {paramsArr : paramsArr});
 
     // Transforms
@@ -134,17 +187,33 @@ function TreeView() {
         if (geomNode.prototype) {
             $('#modal-ok').click(function() {
                 if (geomNode.prototype) {
-                    var parameters = {};
-                    for (key in geomNode.parameters) {
-                        parameters[key] = parseFloat($('#' + key).val());
-                    }
-                    var cmd = create_geom_command(geomNode, {type: geomNode.type,
+                    var cmd;
+                    if (geomNode.path) {
+                        for (key in geomNode.parameters) {
+                            geomNode.parameters[key] = parseFloat($('#' + key).val());
+                        }
+                        cmd = update_geom_command(geomNode);
+                    } else {
+                        var parameters = {};
+                        for (key in geomNode.parameters) {
+                            parameters[key] = parseFloat($('#' + key).val());
+                        }
+                        cmd = create_geom_command(geomNode, {type: geomNode.type,
                                                              parameters: parameters});
+                    }
                     command_stack.execute(cmd);
                 }
             });
             $('#modal-cancel').click(function() {
-                geom_doc.remove(geomNode);
+                if (geomNode.path) {
+                    // It an existing node, remove prototype designation
+                    // and update
+                    geomNode.prototype = false;
+                    geom_doc.update(geomNode);
+                } else {
+                    // It's a new node, remove it
+                    geom_doc.remove(geomNode);
+                }
             });
         }
 
@@ -167,6 +236,26 @@ function TreeView() {
             }
         }
 
+        // Edit geom
+        $('.edit-geom').dblclick(function() { 
+            var id;
+            var pattern = /^target-(.*)$/;
+            var classes = $(this).attr('class').split(' ');
+            for (i in classes) {
+                var match = classes[i].match(pattern);
+                if (match) {
+                    id = match[1];
+                }
+            }
+            if (!id) {
+                throw Error('id for editing could not be determined');
+            }
+            var geomNode = geom_doc.findByPath('/geom/' + id);
+            geomNode.prototype = true;
+            geom_doc.update(geomNode);
+        });
+
+        // Show/Hide
         $('#' + idForGeomNode(geomNode) + ' .show-hide-siblings').click(function() {
                 if ($(this).hasClass('siblings-showing')) {
                     $(this).attr('src', '/images/arrow_hidden.png');
@@ -216,7 +305,6 @@ var treeView = new TreeView();
 
 
 geom_doc.addListener(function(event) {
-    //update_geom_doc_tree();
     treeView.update(event);
 });
 

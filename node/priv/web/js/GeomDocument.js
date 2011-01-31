@@ -30,9 +30,23 @@ function GeomDocument() {
     }
 
     this.findByPath = function(path) {
+        var recurFn = function(geomNode) {
+            if (geomNode.path == path) {
+                return geomNode;
+            } else {
+                for (var i in geomNode.children) {
+                    var foundChild = recurFn(geomNode.children[i]);
+                    if (foundChild) {
+                        return foundChild;
+                    } 
+                }
+                return null;
+            }
+        }
         for (var i in this.rootNodes) {
-            if (this.rootNodes[i].path == path) {
-                return this.rootNodes[i];
+            var found = recurFn(this.rootNodes[i]);
+            if (found) {
+                return found;
             }
         }
         return null;
