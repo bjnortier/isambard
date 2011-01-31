@@ -27,7 +27,7 @@ describe("GeomNode", function() {
         
         var child1 = new GeomNode({type: "sphere"});
         var child2 = new GeomNode({type: "cuboid"});
-        var parentNode = new GeomNode({type: "union"}, child1, child2);
+        var parentNode = new GeomNode({type: "union"}, [child1, child2]);
 
         expect(parentNode.children.length).toEqual(2);
         expect(parentNode.children[0]).toEqual(child1);

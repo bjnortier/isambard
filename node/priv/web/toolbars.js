@@ -73,16 +73,21 @@ function add_to_scene(path, tesselation) {
 
 
 function boolean(type) {
-    if (Interaction.selected.length != 2)  {
-        alert("must have 2 object Interaction.selected!");
-        return;
+    if ((type == 'union') || (type == 'intersect')) {
+        if (Interaction.selected.length <= 1)  {
+            alert("must have > 2 object Interaction.selected!");
+            return;
+        }
+    } else if (type =='subtract') {
+        if (Interaction.selected.length != 2)  {
+            alert("must have 2 object Interaction.selected!");
+            return;
+        }
     }
     var doFn = function() {
         var geometry = {type: type,
-                        parameters: {
-                            a: Interaction.selected[0],
-                            b: Interaction.selected[1]
-                        }};
+                        children: Interaction.selected
+                       };
         
         $.ajax({
             type: "POST",
@@ -95,26 +100,27 @@ function boolean(type) {
                     type: "GET",
                     url: path,
                     success: function(tesselation) {
-                        var node1 = geom_doc.findByPath(Interaction.selected[0]);
-                        var node2 = geom_doc.findByPath(Interaction.selected[1]);
-                        geom_doc.remove(node1);
-                        geom_doc.remove(node2);
+                        var childNodes = Interaction.selected.map(function(x) {
+                            var node = geom_doc.findByPath(x);
+                            geom_doc.remove(node);
+                            return node;
+                        });
                         geometry["path"] = path;
-                        var boolNode = new GeomNode(geometry, node1, node2);
+                        var boolNode = new GeomNode(geometry, childNodes);
                         geom_doc.add(boolNode);
-
-                        SceneJS.withNode(Interaction.selected[0]).parent().remove({node: Interaction.selected[0]});
-                        SceneJS.withNode(Interaction.selected[1]).parent().remove({node: Interaction.selected[1]});
-                        Interaction.unselect();
                         
+                        Interaction.selected.map(function(x) {
+                            SceneJS.withNode(x).parent().remove({node: x});
+                        });
+                        Interaction.unselect();
                         add_to_scene(path, tesselation);
                     }
                 });
             }
         })};
     var undoFn = function() {
-        throw Error("not implemented");
-    }
+    throw Error("not implemented");
+}
     var cmd = new Command(doFn, undoFn);
     command_stack.execute(cmd);
 }

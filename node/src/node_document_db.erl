@@ -125,19 +125,19 @@ create_type(Id, _, Geometry) ->
 
 create_boolean(Id, Type, Geometry) ->
     {struct, GeomProps} = Geometry,
-    {<<"parameters">>, {struct, ParamProps}} = lists:keyfind(<<"parameters">>, 1, GeomProps),
-    {<<"a">>, PathA} = lists:keyfind(<<"a">>, 1, ParamProps),
-    {<<"b">>, PathB} = lists:keyfind(<<"b">>, 1, ParamProps),
-    "/geom/" ++ IdA = binary_to_list(PathA),
-    "/geom/" ++ IdB = binary_to_list(PathB),
+    {<<"children">>, Children} = lists:keyfind(<<"children">>, 1, GeomProps),
+    Ids = lists:map(fun(Path) ->
+                           "/geom/" ++ ChildId = binary_to_list(Path),
+                           list_to_binary(ChildId)
+                   end,
+                   Children),
+                   
     Transforms = case lists:keyfind(<<"transforms">>, 1, GeomProps) of
                      false -> [];
                      {<<"transforms">>, T} -> T
                  end,
     worker_create(Id, {struct, [{<<"type">>, Type},
-                                {<<"parameters">>, {struct,
-                                                    [{<<"a">>, list_to_binary(IdA)},                                
-                                                     {<<"b">>, list_to_binary(IdB)}]}},
+                                {<<"children">>, Ids},
                                 {<<"transforms">>, Transforms}
                                ]}).
 worker_create(Id, Geometry) ->

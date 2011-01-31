@@ -329,62 +329,48 @@ mValue create_torus(string id, map< string, mValue > geometry) {
 #pragma mark Boolean
 
 mValue create_union(string id, map< string, mValue > geometry) {
-    map< string, mValue > parameters = geometry["parameters"].get_obj();
-    if ((parameters["a"].type() == str_type)
-        &&
-        (parameters["b"].type() == str_type)) {
-        string path_a = parameters["a"].get_str();
-        string path_b = parameters["b"].get_str();
-        
-        TopoDS_Shape shape_a = shapes[path_a];
-        TopoDS_Shape shape_b = shapes[path_b];
-        
-        
-        TopoDS_Shape boolean_shape = BRepAlgoAPI_Fuse(shape_a, shape_b).Shape();
-        shapes[id] = applyTransforms(boolean_shape, geometry);
-        return tesselate(id);
+    mArray children = geometry["children"].get_array();
+    if (children.size() < 2) {
+        return("invalid children");
     }
-    return mValue("invalid union parameters");
-}
-
-mValue create_subtract(string id, map< string, mValue > geometry) {
-    map< string, mValue > parameters = geometry["parameters"].get_obj();
-    if ((parameters["a"].type() == str_type)
-        &&
-        (parameters["b"].type() == str_type)) {
-        string id_a = parameters["a"].get_str();
-        string id_b = parameters["b"].get_str();
-        
-        TopoDS_Shape shape_a = shapes[id_a];
-        TopoDS_Shape shape_b = shapes[id_b];
-        
-        // It makes more sense to when selecting 'subtract A FROM B'
-        TopoDS_Shape boolean_shape = BRepAlgoAPI_Cut(shape_b, shape_a).Shape();
-        shapes[id] = applyTransforms(boolean_shape, geometry);
-        return tesselate(id);
+    
+    TopoDS_Shape boolean_shape = BRepAlgoAPI_Fuse(shapes[children[0].get_str()], 
+                                                  shapes[children[1].get_str()]).Shape();
+    for (unsigned int i = 2; i < children.size(); ++i) {
+        boolean_shape = BRepAlgoAPI_Fuse(boolean_shape,
+                                         shapes[children[i].get_str()]).Shape();
     }
-    return mValue("invalid union parameters");
+    shapes[id] = applyTransforms(boolean_shape, geometry);
+    return tesselate(id);
 }
 
 mValue create_intersect(string id, map< string, mValue > geometry) {
-    map< string, mValue > parameters = geometry["parameters"].get_obj();
-    if ((parameters["a"].type() == str_type)
-        &&
-        (parameters["b"].type() == str_type)) {
-        string path_a = parameters["a"].get_str();
-        string path_b = parameters["b"].get_str();
-        
-        TopoDS_Shape shape_a = shapes[path_a];
-        TopoDS_Shape shape_b = shapes[path_b];
-        
-        
-        TopoDS_Shape boolean_shape = BRepAlgoAPI_Common(shape_a, shape_b).Shape();
-        shapes[id] = applyTransforms(boolean_shape, geometry);
-        return tesselate(id);
+    mArray children = geometry["children"].get_array();
+    if (children.size() < 2) {
+        return("invalid children");
     }
-    return mValue("invalid union parameters");
+    
+    TopoDS_Shape boolean_shape = BRepAlgoAPI_Common(shapes[children[0].get_str()], 
+                                                  shapes[children[1].get_str()]).Shape();
+    for (unsigned int i = 2; i < children.size(); ++i) {
+        boolean_shape = BRepAlgoAPI_Common(boolean_shape,
+                                         shapes[children[i].get_str()]).Shape();
+    }
+    shapes[id] = applyTransforms(boolean_shape, geometry);
+    return tesselate(id);
 }
 
+mValue create_subtract(string id, map< string, mValue > geometry) {
+    mArray children = geometry["children"].get_array();
+    if (children.size() != 2) {
+        return("only 2 children supported");
+    }
+    
+    TopoDS_Shape boolean_shape = BRepAlgoAPI_Cut(shapes[children[1].get_str()], 
+                                                 shapes[children[0].get_str()]).Shape();
+    shapes[id] = applyTransforms(boolean_shape, geometry);
+    return tesselate(id);
+}
 
 mValue create_geometry(string id, map< string, mValue > geometry) {
     mValue geomType = geometry["type"];

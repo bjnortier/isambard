@@ -40,7 +40,7 @@ describe('GeomDocument', function() {
 
     it('can be used to find child nodes', function() {
         var node1 = new GeomNode({type: 'sphere', path: '/1'});
-        var node2 = new GeomNode({type: 'cuboid', path: '/2'}, node1);
+        var node2 = new GeomNode({type: 'cuboid', path: '/2'}, [node1]);
         doc.add(node2);
         
         expect(doc.findByPath('/1')).toEqual(node1);

@@ -27,9 +27,15 @@ function GeomNode() {
     this.transforms = [];
 
     this.children = [];
-    for (var i = 1; i < arguments.length; ++i) {
-        arguments[i].parent = this;
-        this.children.push(arguments[i]);
+    if (arguments[1]) {
+        if (!typeof(arguments[1]) == "object") {
+            throw new Error("Children must be array");
+        }
+
+        for (var i in arguments[1]) {
+            arguments[1][i].parent = this;
+            this.children.push(arguments[1][i]);
+        }
     }
 
     // TODO: Move test for multiple prorotype transforms from doc
@@ -40,6 +46,9 @@ function GeomNode() {
         // defined, as JSON.stringigy simply ignores those fields
         return JSON.stringify({type: this.type,
                                parameters: this.parameters,
+                               children: this.children.map(function(child) {
+                                   return child.path;
+                               }),
                                transforms: this.transforms.map(function(tx) {
                                    return JSON.parse(tx.json());
                                })});
