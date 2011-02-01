@@ -172,12 +172,14 @@ function renderNode(geomNode) {
     // Children
     var childTables = geomNode.children.map(renderNode);
     
-    var template = '<table id="{{id}}"><tr><td><img class="show-hide-siblings siblings-showing" src="/images/arrow_showing.png"></img>{{type}}</td></tr><tr><td>{{{paramsTable}}}</td></tr>{{#prototype}}<tr><td><input id="modal-ok" type="submit" value="Ok"/><input id="modal-cancel" type="submit" value="Cancel"/></td></tr>{{/prototype}}{{#transformRows}}<tr><td>{{{.}}}</tr></td>{{/transformRows}}{{#children}}<tr><td>{{{.}}}</td></td>{{/children}}</table>';
+    var template = '<table id="{{id}}"><tr><td><img class="show-hide-siblings siblings-showing" src="/images/arrow_showing.png"></img>{{^prototype}}<span class="{{clazz}}">{{type}}</span>{{/prototype}}{{#prototype}}{{type}}{{/prototype}}</td></tr><tr><td>{{{paramsTable}}}</td></tr>{{#prototype}}<tr><td><input id="modal-ok" type="submit" value="Ok"/><input id="modal-cancel" type="submit" value="Cancel"/></td></tr>{{/prototype}}{{#transformRows}}<tr><td>{{{.}}}</tr></td>{{/transformRows}}{{#children}}<tr><td>{{{.}}}</td></td>{{/children}}</table>';
+    var geomId = idForGeomNode(geomNode);
     var view = {type: geomNode.type,
                 prototype: geomNode.prototype,
-                id: idForGeomNode(geomNode),
+                id: geomId,
                 paramsTable: paramsTable,
                 transformRows: transformRows,
+                clazz: 'select-geom target-' + geomId,
                 children: childTables
                };
     var nodeTableContents = $.mustache(template, view);
@@ -242,6 +244,22 @@ function TreeView() {
                 });
             }
         }
+
+        $('.select-geom').click(function() {
+            var id;
+            var pattern = /^target-(.*)$/;
+            var classes = $(this).attr('class').split(' ');
+            for (i in classes) {
+                var match = classes[i].match(pattern);
+                if (match) {
+                    id = match[1];
+                }
+            }
+            if (!id) {
+                throw Error('id for editing could not be determined');
+            }
+            Interaction.selectPath('/geom/' + id);
+        });
 
         // Edit geom
         $('.edit-geom').dblclick(function() { 
