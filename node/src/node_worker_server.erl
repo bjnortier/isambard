@@ -17,11 +17,11 @@ stop() ->
     gen_server:call(?MODULE, stop).
 
 call(Msg) when is_list(Msg) andalso length(Msg) > 0 ->
-    gen_server:call(?MODULE, {call, Msg});
+    gen_server:call(?MODULE, {call, Msg}, 30000);
 call(Msg) when is_list(Msg)  ->
     empty_msg;
 call(Msg) when is_binary(Msg) andalso size(Msg) > 0 ->
-    gen_server:call(?MODULE, {call, Msg});
+    gen_server:call(?MODULE, {call, Msg}, 30000);
 call(Msg) when is_binary(Msg) ->
     empty_msg;
 call(_Msg) ->
@@ -52,7 +52,7 @@ handle_call({call, Msg}, _From, State) ->
             {reply, Data, State};
         {'EXIT', Port, Reason} ->
             {stop, {error, Reason}, State}
-    after 5000 ->
+    after 30000 ->
             {reply, {error, timeout}, State}
     end;
 handle_call(Request, _From, State) ->

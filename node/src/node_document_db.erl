@@ -18,13 +18,13 @@ exists(Id) ->
 raw_geom_record(Id) ->
     gen_server:call(?MODULE, {raw_geom_record, Id}).
 create(Geometry) ->
-    gen_server:call(?MODULE, {create, Geometry}).
+    gen_server:call(?MODULE, {create, Geometry}, 30000).
 update(Id, Geometry) ->
-    gen_server:call(?MODULE, {update, Id, Geometry}).
+    gen_server:call(?MODULE, {update, Id, Geometry}, 30000).
 tesselation(Id) ->
-    gen_server:call(?MODULE, {tesselation, Id}).
+    gen_server:call(?MODULE, {tesselation, Id}, 30000).
 stl(Id) ->
-    gen_server:call(?MODULE, {stl, Id}).
+    gen_server:call(?MODULE, {stl, Id}, 30000).
     
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -174,6 +174,15 @@ $(document).ready(function() {
                function(parameters) { create_transform("scale", ["x", "y", "z", "factor"]); }).render($("#transforms"));
     new Action("rotate", "/images/rotate.png", 
                function(parameters) { create_transform("rotate", ["px", "py", "pz", "vx", "vy", "vz", "angle"]); }).render($("#transforms"));
+    new Action("mirror", "/images/mirror.png", 
+               function(parameters) { create_transform("mirror", ["px", "py", "pz", "vx", "vy", "vz"]); }).render($("#transforms"));
+
+
+    new Action("copy_translate", "/images/copy_translate.png", 
+               function(parameters) { create_transform("copy_translate", ["dx", "dy", "dz", "n"]); }).render($("#transforms"));
+    new Action("copy_rotate", "/images/copy_rotate.png", 
+               function(parameters) { create_transform("copy_rotate", ["px", "py", "pz", "vx", "vy", "vz", "angle", "n"]); }).render($("#transforms"));
+
 
 
 });
