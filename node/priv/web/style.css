@@ -16,29 +16,7 @@ body {
     background-color: black;
 }
 
-#edit {
-    position: absolute;
-    left: 20px;
-    top: 20px;
-}
-
-#primitives {
-    position: absolute;
-    left: 20px;
-    top: 80px;
-}
-
-#boolean {
-    position: absolute;
-    left: 20px;
-    top: 140px;
-}
-
-#transforms {
-    position:absolute;
-    left:20px;
-    top:200px;
-}
+/* ---------------------------------- TreeView ------------------------------------ */
 
 #geom-model-doc {
     position: absolute;
@@ -68,6 +46,49 @@ body {
 }
 
 
+#geom-model-doc table tr.selected {
+    background-color: #eeee00;
+    color: black;
+}
+
+.show-hide-siblings {
+    padding-right: 3px;
+}
+
+.select-geom {
+    cursor: pointer;
+}
+
+/* ---------------------------------- Toolbar ------------------------------------ */
+
+
+#edit {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+}
+
+#primitives {
+    position: absolute;
+    left: 20px;
+    top: 80px;
+}
+
+#boolean {
+    position: absolute;
+    left: 20px;
+    top: 140px;
+}
+
+
+
+#transforms {
+    position:absolute;
+    left:20px;
+    top:200px;
+}
+
+
 .toolbar {
     background-color: #666;
     padding: 5px;
@@ -85,15 +106,4 @@ body {
     border-radius: 5px;
 }
 
-.dialog fieldset {
-    text-align: left;
-}
 
-.dialog fieldset input {
-    display: block;
-    margin: 5px;
-}
-
-.dialog fieldset {
-    border: none;
-}

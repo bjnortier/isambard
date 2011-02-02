@@ -1,111 +1,3 @@
-var Interaction = {};
-Interaction.selected = [];
-
-Observable.makeObservable(Interaction);
-Interaction.addListener(function() {
-    
-    if (Interaction.selected.length == 1) {
-        $('#action_stl').unbind('click');
-        var pattern = /^\/geom\/(.*)$/;
-        var id = Interaction.selected[0].match(pattern)[1];
-        $('#action_stl').attr('href', '/stl/' + id); 
-    } else {
-        $('#action_stl').click(function() {
-            alert("select one object"); 
-            return false;
-        });
-    }
-});
-
-
-var picking = false;
-var pickHit = false;
-var shiftPicking = false;
-
-
-Interaction.beforePick = function() {
-    picking = true;
-    pickHit = false;
-}
-
-Interaction.afterPick = function() {
-    if (picking && !pickHit && !shiftPicking) {
-        Interaction.unselect();
-    }
-    picking = false;
-    shiftPicking = false;
-}
-
-Interaction.picked = function(path) {
-    
-    pickHit = true;
-    var alreadySelected = false;
-    
-    for (var i in Interaction.selected) {
-        if (Interaction.selected[i] == path) {
-            alreadySelected = true;
-        } 
-    }
-
-    if (shiftPicking) {
-        if (alreadySelected) {
-            Interaction.deselectPath(path);
-        } else  {
-            Interaction.selectPath(path);
-        }
-    } else {
-        if (alreadySelected) {
-            // Do nothing
-        } else {
-            Interaction.unselect();
-            Interaction.selectPath(path);
-        }
-    }
-}
-
-
-
-Interaction.selectPath = function(path) {
-    Interaction.selected.push(path);
-    SceneJS.withNode(path).set("baseColor", { r: 1.0, g: 1.0, b: 0.0 });
-    Interaction.notify("updated");
-}
-
-Interaction.deselectPath = function(path) {
-    var newSelected = [];
-    for (i in Interaction.selected) {
-        if (Interaction.selected[i] != path) {
-            newSelected.push(Interaction.selected[i]);
-        }
-    }
-    Interaction.selected = newSelected;
-    SceneJS.withNode(path).set("baseColor", { r: 0.5, g: 1.0, b: 0.0 });
-    console.log("selected:" + Interaction.selected);
-
-    Interaction.notify("updated");
-}
-
-Interaction.unselect = function() {
-    for (var i in Interaction.selected) {
-        SceneJS.withNode(Interaction.selected[i]).set("baseColor", { r: 0.5, g: 1.0, b: 0.0 });
-    }
-    Interaction.selected = [];
-
-    Interaction.notify("updated");
-}
-
-Interaction.pickable = function(path) {
-     SceneJS.withNode(path).bind("picked",
-                                 function(event) {
-                                     Interaction.picked(path);
-                                 });
-}
-
-SceneJS.withNode("the-scene").bind("post-rendered",
-                                 function(event) {
-                                     Interaction.afterPick()
-                                 });
-
 var canvas = document.getElementById("theCanvas");
 
 var lastX;
@@ -126,6 +18,7 @@ function mouseDown(event) {
     dragging = true;
 }
 
+var shiftPicking = false;
 function mouseUp(event) {
     if (!panning && !rotating) {
         /* On mouse down, we render the scene in picking mode, passing in the 
@@ -134,11 +27,9 @@ function mouseUp(event) {
          * geometry node was picked, as those nodes are visited.
          *
          */
-        if (event.shiftKey) {
-            shiftPicking = true;
-        }
+        shiftPicking = event.shiftKey;
         var coords = clickCoordsWithinElement(event);
-        Interaction.beforePick();
+        picker.beforePick();
         SceneJS.withNode("the-scene").pick(coords.x, coords.y);
     }
 
@@ -211,12 +102,6 @@ canvas.addEventListener('mousewheel', mouseWheel, false);
 canvas.addEventListener('mousedown', mouseDown, true);
 canvas.addEventListener('mousemove', mouseMove, true);
 canvas.addEventListener('mouseup', mouseUp, true);
-
-$('#theCanvas').keypress(function(event) {
-    console.log(event);
-});
-
-
 
 function clickCoordsWithinElement(event) {
     var coords = { x: 0, y: 0};
