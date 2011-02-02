@@ -48,15 +48,25 @@ body {
 }
 
 #geom-model-doc table {
-    /*border-collapse:collapse;*/
+    border-collapse:collapse;
     border: solid thin grey;
     text-align: left;
 }
 
 #geom-model-doc table td {
-    border: 1px solid white;
+    border: 1px solid #999;
     padding: 3px;
 }
+
+
+#geom-model-doc table tr.odd {
+    background-color: #333;
+}
+
+#geom-model-doc table tr.even {
+    background-color: #000;
+}
+
 
 .toolbar {
     background-color: #666;
@@ -87,4 +97,3 @@ body {
 .dialog fieldset {
     border: none;
 }
-

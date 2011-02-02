@@ -245,6 +245,9 @@ function TreeView() {
             }
         }
 
+        $("tr:nth-child(even)").addClass("even");
+        $("tr:nth-child(odd)").addClass("odd");
+
         $('.select-geom').click(function() {
             var id;
             var pattern = /^target-(.*)$/;
