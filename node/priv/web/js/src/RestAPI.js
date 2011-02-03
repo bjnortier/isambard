@@ -18,7 +18,9 @@ function update_geom_command(geomNode) {
                 contentType: 'application/json',
                 data: nextNode.json(),
                 success: function(nodeData) {
-                    nextNode.prototype = false;
+                    if (nextNode.editing) {
+                        nextNode.editing = false;
+                    }
                     if (updateChain.length > 0) {
                         chainedPutFn();
                     } else {

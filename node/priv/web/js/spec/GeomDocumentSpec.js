@@ -52,7 +52,7 @@ describe('GeomDocument', function() {
         doc.add(node1);
 
         var transform = new Transform({type: 'translate',
-                                       prototype: true,
+                                       editing: true,
                                        parameters: {dx: 1,
                                                     dy: 1,
                                                     dz: 1}});
@@ -61,7 +61,7 @@ describe('GeomDocument', function() {
 
         expect(function() {
             doc.addTransformToNodeWithPath('/1', transform)
-        }).toThrow(new Error('multiple prototype transforms not allowed'));
+        }).toThrow(new Error('multiple editing transforms not allowed'));
 
         // Remove
         doc.removeTransformFromNodeWithPath('/1', transform);

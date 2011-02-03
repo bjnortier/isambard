@@ -55,11 +55,11 @@ function GeomDocument() {
     this.addTransformToNodeWithPath = function(path, transform) {
         var node = this.findByPath(path);
         if (node) {
-            // Only one prototype transform allowed
-            if (transform.prototype) {
+            // Only one editing transform allowed
+            if (transform.editing) {
                 for (var i in node.transforms) {
-                    if (node.transforms[i].prototype) {
-                        throw(new Error('multiple prototype transforms not allowed'));
+                    if (node.transforms[i].editing) {
+                        throw(new Error('multiple editing transforms not allowed'));
                     }
                 }
             }

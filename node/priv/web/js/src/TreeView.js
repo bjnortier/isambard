@@ -6,20 +6,20 @@ function renderTransform(geomNode, transformIndex) {
         paramsArr.push({key: key,
                         value: transform.parameters[key],
                         clazz: 'edit-transform target-' + id + '-' + transformIndex,
-                        prototype: transform.prototype
+                        editing: transform.editing
                        });
     }
     
-    var template = '<table><tr><td>{{type}}</td></tr><tr><td><table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^prototype}}<span class="{{clazz}}">{{value}}</span>{{/prototype}}{{#prototype}}<input id="{{key}}" type="text" value="{{value}}">{{/prototype}}</td></tr>{{/paramsArr}}</td></tr></table>{{#prototype}}<tr><td><input id="transform-ok" type="submit" value="Ok"/><input id="transform-cancel" type="submit" value="Cancel"/></td></tr>{{/prototype}}</table>';
+    var template = '<table><tr><td>{{type}}</td></tr><tr><td><table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^editing}}<span class="{{clazz}}">{{value}}</span>{{/editing}}{{#editing}}<input id="{{key}}" type="text" value="{{value}}">{{/editing}}</td></tr>{{/paramsArr}}</td></tr></table>{{#editing}}<tr><td><input id="transform-ok" type="submit" value="Ok"/><input id="transform-cancel" type="submit" value="Cancel"/></td></tr>{{/editing}}</table>';
     var transformTable = $.mustache(template, {
         type: transform.type,
         paramsArr: paramsArr,
-        prototype: transform.prototype});
+        editing: transform.editing});
     return transformTable;
 }
 
 function idForGeomNode(geomNode) {
-    var id = 'prototype_id';
+    var id = 'editing_id';
     if (geomNode.path) {
         id = idForGeomPath(geomNode.path);
     }
@@ -46,11 +46,11 @@ function renderNode(geomNode) {
             paramsArr.push({key: key,
                             value: geomNode.parameters[key],
                             clazz: 'edit-geom target-' + id,
-                            prototype: geomNode.prototype
+                            editing: geomNode.editing
                            });
         }
     }
-    var template = '<table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^prototype}}<span class="{{clazz}}">{{value}}</span>{{/prototype}}{{#prototype}}<input id="{{key}}" type="text" value="{{value}}"/>{{/prototype}}</td></tr>{{/paramsArr}}</table>';
+    var template = '<table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^editing}}<span class="{{clazz}}">{{value}}</span>{{/editing}}{{#editing}}<input id="{{key}}" type="text" value="{{value}}"/>{{/editing}}</td></tr>{{/paramsArr}}</table>';
     var paramsTable = $.mustache(template, {paramsArr : paramsArr});
 
     // Transforms
@@ -63,10 +63,10 @@ function renderNode(geomNode) {
     // Children
     var childTables = geomNode.children.map(renderNode);
     
-    var template = '<table id="{{id}}"><tr><td><img class="show-hide-siblings siblings-showing" src="/images/arrow_showing.png"></img>{{^prototype}}<span class="{{clazz}}">{{type}}</span>{{/prototype}}{{#prototype}}{{type}}{{/prototype}}</td></tr><tr><td>{{{paramsTable}}}</td></tr>{{#prototype}}<tr><td><input id="modal-ok" type="submit" value="Ok"/><input id="modal-cancel" type="submit" value="Cancel"/></td></tr>{{/prototype}}{{#transformRows}}<tr><td>{{{.}}}</tr></td>{{/transformRows}}{{#children}}<tr><td>{{{.}}}</td></td>{{/children}}</table>';
+    var template = '<table id="{{id}}"><tr><td><img class="show-hide-siblings siblings-showing" src="/images/arrow_showing.png"></img>{{^editing}}<span class="{{clazz}}">{{type}}</span>{{/editing}}{{#editing}}{{type}}{{/editing}}</td></tr><tr><td>{{{paramsTable}}}</td></tr>{{#editing}}<tr><td><input id="modal-ok" type="submit" value="Ok"/><input id="modal-cancel" type="submit" value="Cancel"/></td></tr>{{/editing}}{{#transformRows}}<tr><td>{{{.}}}</tr></td>{{/transformRows}}{{#children}}<tr><td>{{{.}}}</td></td>{{/children}}</table>';
     var geomId = idForGeomNode(geomNode);
     var view = {type: geomNode.type,
-                prototype: geomNode.prototype,
+                editing: geomNode.editing,
                 id: geomId,
                 paramsTable: paramsTable,
                 transformRows: transformRows,
@@ -84,9 +84,9 @@ function TreeView() {
 
     this.addEvents = function(geomNode) {
 
-        if (geomNode.prototype) {
+        if (geomNode.editing) {
             $('#modal-ok').click(function() {
-                if (geomNode.prototype) {
+                if (geomNode.editing) {
                     var cmd;
                     if (geomNode.path) {
                         for (key in geomNode.parameters) {
@@ -106,9 +106,9 @@ function TreeView() {
             });
             $('#modal-cancel').click(function() {
                 if (geomNode.path) {
-                    // It an existing node, remove prototype designation
+                    // It an existing node, remove editing designation
                     // and update
-                    geomNode.prototype = false;
+                    geomNode.editing = false;
                     geom_doc.update(geomNode);
                 } else {
                     // It's a new node, remove it
@@ -120,12 +120,12 @@ function TreeView() {
         // Add the transform ok/cancel event functions. There can be only a 
         // single prorotype transform on a GeomNode
         for (var i in geomNode.transforms) {
-            if (geomNode.transforms[i].prototype) {
+            if (geomNode.transforms[i].editing) {
                 var transform = geomNode.transforms[i];
                 $('#transform-ok').click(function() {
                     for (key in transform.parameters) {
                         transform.parameters[key] = parseFloat($('#' + key).val());
-                        transform.prototype = false;
+                        transform.editing = false;
                     }
                     var cmd = transform_geom_command(geomNode, transform);
                     command_stack.execute(cmd);
@@ -170,7 +170,7 @@ function TreeView() {
                 throw Error('id for editing could not be determined');
             }
             var geomNode = geom_doc.findByPath('/geom/' + id);
-            geomNode.prototype = true;
+            geomNode.editing = true;
             geom_doc.update(geomNode);
         });
 
@@ -194,7 +194,7 @@ function TreeView() {
                 throw Error('transformIndex for editing could not be determined');
             }
             var geomNode = geom_doc.findByPath('/geom/' + id);
-            geomNode.transforms[transformIndex].prototype = true;
+            geomNode.transforms[transformIndex].editing = true;
             geom_doc.update(geomNode);
         });
 

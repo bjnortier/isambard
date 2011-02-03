@@ -9,7 +9,7 @@ function SceneView() {
     this.camera_translate = {x: 0, y:0, z:0};
 
     var add = function(geomNode) {
-        if (!geomNode.prototype) {
+        if (!geomNode.editing) {
             var sceneNode = {type : "geometry",
                              indices : geomNode.tesselation.indices,
                              positions : geomNode.tesselation.positions,
@@ -30,7 +30,7 @@ function SceneView() {
     }
 
     var remove = function(geomNode) {
-        if (!geomNode.prototype) {
+        if (!geomNode.editing) {
             SceneJS.withNode(geomNode.path).parent().remove({node: geomNode.path});
         }
     }

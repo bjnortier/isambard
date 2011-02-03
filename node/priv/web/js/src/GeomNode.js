@@ -39,13 +39,11 @@ function GeomNode() {
         }
     }
 
-
-    
 }
 
-// TODO: Move test for multiple editing transforms from doc
+// TODO: Move test for multiple prorotype transforms from doc
 // into this class
-
+    
 GeomNode.prototype.json = function() {
     // No need to do somethign special with parameters if they are not 
     // defined, as JSON.stringigy simply ignores those fields
@@ -53,7 +51,7 @@ GeomNode.prototype.json = function() {
                            parameters: this.parameters,
                            children: this.children.map(function(child) {
                                return child.path;
-                               }),
+                           }),
                            transforms: this.transforms.map(function(tx) {
                                return JSON.parse(tx.json());
                            })});
