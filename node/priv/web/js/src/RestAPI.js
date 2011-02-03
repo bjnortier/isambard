@@ -25,8 +25,8 @@ function update_geom_command(precursor, geomNode, transform) {
                         nextNode.editing = false;
                     }
                     for (var i in nextNode.transforms) {
-                        if (nextNode[i].transform.editing) {
-                            nextNode[i].transform.editing = false;
+                        if (nextNode.transforms[i].editing) {
+                            nextNode.transforms[i].editing = false;
                         }
                     }
                     if (updateChain.length > 0) {
@@ -56,35 +56,6 @@ function update_geom_command(precursor, geomNode, transform) {
     }
     return new Command(doFn, undoFn);
 }
-
-
-/*function transform_geom_command(precursor, geomNode, transform) {
-    var doFn = function() {
-        $.ajax({
-            type: 'PUT',
-            url: geomNode.path,
-            contentType: 'application/json',
-            data: geomNode.json(),
-            success: function(nodeData){
-                transform.editing = false;
-                var path = nodeData.path;
-                $.ajax({
-                    type: 'GET',
-                    url: path,
-                    success: function(tesselation) {
-                        geomNode.tesselation = tesselation;
-                        selectionManager.deselectAll();
-                        geom_doc.replace(precursor, geomNode);
-                    }
-                });
-            }
-        });
-    };
-    var undoFn = function() {
-        throw Error('not implemented');
-    }
-    return new Command(doFn, undoFn);
-}*/
 
 
 function create_geom_command(prototype, geometry) {

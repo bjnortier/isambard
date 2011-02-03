@@ -2,6 +2,10 @@
 function GeomDocument() {
 
     this.rootNodes = [];
+
+    this.isRoot = function(node) {
+        return this.rootNodes.indexOf(node) > -1;
+    }
     
     this.add = function(node) {
         this.rootNodes = [node].concat(this.rootNodes);
