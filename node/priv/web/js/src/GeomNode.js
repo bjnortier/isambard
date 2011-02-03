@@ -63,8 +63,7 @@ GeomNode.prototype.editableCopy = function() {
                                 parameters : copiedParameters,
                                 transforms : copiedTransforms,
                                 tesselation : this.tesselation,
-                                children : this.children
-                               });
+                               }, this.children);
     return newNode;
 }
 
