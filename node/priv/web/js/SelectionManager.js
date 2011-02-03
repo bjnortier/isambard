@@ -36,15 +36,11 @@ function SelectionManager() {
 
     this.selectPath = function(path) {
         selected.push(path);
-        // TODO: Replace with observer
-        SceneJS.withNode(path).set('baseColor', { r: 1.0, g: 1.0, b: 0.0 });
         this.notify({selected : [path]});
     }
     
     this.deselectPath = function(path) {
         selected.splice(selected.indexOf(path), 1);
-        // TODO: Replace with observer
-        SceneJS.withNode(path).set('baseColor', { r: 0.5, g: 1.0, b: 0.0 });
         this.notify({deselected : [path]});
     }
 
@@ -56,15 +52,11 @@ function SelectionManager() {
                 found = true;
             } else {
                 deselected.push(selected[i]);
-                // TODO: Replace with observer
-                SceneJS.withNode(selected[i]).set('baseColor', { r: 0.5, g: 1.0, b: 0.0 });
             }
         }
         
         this.notify({deselected : deselected});
         if (!found) {
-            // TODO: Replace with observer
-            SceneJS.withNode(path).set('baseColor', { r: 1.0, g: 1.0, b: 0.0 });
             this.notify({selected : [path]});
         }
         selected = [path];
@@ -72,10 +64,6 @@ function SelectionManager() {
     
     this.deselectAll = function() {
         if (selected.length > 0) {
-            for (var i in selected) {
-                // TODO: Replace with observer
-                SceneJS.withNode(selected[i]).set('baseColor', { r: 0.5, g: 1.0, b: 0.0 });
-            }
             this.notify({deselected : selected});
             selected = [];
         }
@@ -111,7 +99,7 @@ function ScenePicker(_selectionManager) {
     var shiftPicking = false;
     var picker = this;
 
-    SceneJS.withNode("the-scene").bind("post-rendered",
+    SceneJS.withNode("theScene").bind("post-rendered",
                                        function(event) {
                                            picker.afterPick()
                                        });

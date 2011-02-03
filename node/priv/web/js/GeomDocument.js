@@ -57,7 +57,7 @@ function GeomDocument() {
         if (node) {
             // Only one prototype transform allowed
             if (transform.prototype) {
-                for (i in node.transforms) {
+                for (var i in node.transforms) {
                     if (node.transforms[i].prototype) {
                         throw(new Error('multiple prototype transforms not allowed'));
                     }

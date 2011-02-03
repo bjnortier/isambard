@@ -30,7 +30,7 @@ function mouseUp(event) {
         shiftPicking = event.shiftKey;
         var coords = clickCoordsWithinElement(event);
         picker.beforePick();
-        SceneJS.withNode("the-scene").pick(coords.x, coords.y);
+        SceneJS.withNode("theScene").pick(coords.x, coords.y);
     }
 
     dragging = false;
@@ -59,13 +59,13 @@ function mouseMove(event) {
     }
 
     if (rotating) {
-        yaw_angle += (event.clientX - lastX) * 0.5;
-        pitch_angle -= (event.clientY - lastY) * -0.5;
+        sceneView.yaw_angle += (event.clientX - lastX) * 0.5;
+        sceneView.pitch_angle -= (event.clientY - lastY) * -0.5;
     }
 
     if (panning) {
-        camera_translate.y += (event.clientX - lastX) * 0.01;
-        camera_translate.z -= (event.clientY - lastY) * 0.01;
+        sceneView.camera_translate.y += (event.clientX - lastX) * 0.01;
+        sceneView.camera_translate.z -= (event.clientY - lastY) * 0.01;
     }
 
     lastX = event.clientX;
@@ -90,8 +90,8 @@ function mouseWheel(e) {
     e = e ? e : window.event;
     var raw = e.detail ? e.detail : e.wheelDelta;
     var normal = e.detail ? e.detail * -1 : e.wheelDelta / 40;
-    if (camera_translate.x + normal < 40) {
-        camera_translate.x += normal;
+    if (sceneView.camera_translate.x + normal < 40) {
+        sceneView.camera_translate.x += normal;
     }
     cancelEvent(e);
 }

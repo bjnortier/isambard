@@ -1,3 +1,82 @@
+function renderTransform(geomNode, transformIndex) {
+    var paramsArr = [];
+    var transform = geomNode.transforms[transformIndex];
+    var id = idForGeomNode(geomNode);
+    for (key in transform.parameters) {
+        paramsArr.push({key: key,
+                        value: transform.parameters[key],
+                        clazz: 'edit-transform target-' + id + '-' + transformIndex,
+                        prototype: transform.prototype
+                       });
+    }
+    
+    var template = '<table><tr><td>{{type}}</td></tr><tr><td><table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^prototype}}<span class="{{clazz}}">{{value}}</span>{{/prototype}}{{#prototype}}<input id="{{key}}" type="text" value="{{value}}">{{/prototype}}</td></tr>{{/paramsArr}}</td></tr></table>{{#prototype}}<tr><td><input id="transform-ok" type="submit" value="Ok"/><input id="transform-cancel" type="submit" value="Cancel"/></td></tr>{{/prototype}}</table>';
+    var transformTable = $.mustache(template, {
+        type: transform.type,
+        paramsArr: paramsArr,
+        prototype: transform.prototype});
+    return transformTable;
+}
+
+function idForGeomNode(geomNode) {
+    var id = 'prototype_id';
+    if (geomNode.path) {
+        id = idForGeomPath(geomNode.path);
+    }
+    return id;
+}
+
+function idForGeomPath(path) {
+    var pattern = /^\/geom\/(.*)$/;
+    return path.match(pattern)[1];
+}
+
+function renderNode(geomNode) {
+    // Params
+    var paramsArr = [];
+    if (!((geomNode.type == 'union')
+          ||
+          (geomNode.type == 'subtract')
+          ||
+          (geomNode.type == 'subtract'))) {
+
+        var id = idForGeomNode(geomNode);
+        for (key in geomNode.parameters) {
+
+            paramsArr.push({key: key,
+                            value: geomNode.parameters[key],
+                            clazz: 'edit-geom target-' + id,
+                            prototype: geomNode.prototype
+                           });
+        }
+    }
+    var template = '<table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^prototype}}<span class="{{clazz}}">{{value}}</span>{{/prototype}}{{#prototype}}<input id="{{key}}" type="text" value="{{value}}"/>{{/prototype}}</td></tr>{{/paramsArr}}</table>';
+    var paramsTable = $.mustache(template, {paramsArr : paramsArr});
+
+    // Transforms
+    var transformRows = []
+    for (var i in geomNode.transforms) {
+        transformRows.push(renderTransform(geomNode, i));
+    };
+
+    
+    // Children
+    var childTables = geomNode.children.map(renderNode);
+    
+    var template = '<table id="{{id}}"><tr><td><img class="show-hide-siblings siblings-showing" src="/images/arrow_showing.png"></img>{{^prototype}}<span class="{{clazz}}">{{type}}</span>{{/prototype}}{{#prototype}}{{type}}{{/prototype}}</td></tr><tr><td>{{{paramsTable}}}</td></tr>{{#prototype}}<tr><td><input id="modal-ok" type="submit" value="Ok"/><input id="modal-cancel" type="submit" value="Cancel"/></td></tr>{{/prototype}}{{#transformRows}}<tr><td>{{{.}}}</tr></td>{{/transformRows}}{{#children}}<tr><td>{{{.}}}</td></td>{{/children}}</table>';
+    var geomId = idForGeomNode(geomNode);
+    var view = {type: geomNode.type,
+                prototype: geomNode.prototype,
+                id: geomId,
+                paramsTable: paramsTable,
+                transformRows: transformRows,
+                clazz: 'select-geom target-' + geomId,
+                children: childTables
+               };
+    var nodeTableContents = $.mustache(template, view);
+    return nodeTableContents;
+}
+
 
 function TreeView() {
 
@@ -40,7 +119,7 @@ function TreeView() {
 
         // Add the transform ok/cancel event functions. There can be only a 
         // single prorotype transform on a GeomNode
-        for (i in geomNode.transforms) {
+        for (var i in geomNode.transforms) {
             if (geomNode.transforms[i].prototype) {
                 var transform = geomNode.transforms[i];
                 $('#transform-ok').click(function() {
@@ -64,7 +143,7 @@ function TreeView() {
             var id;
             var pattern = /^target-(.*)$/;
             var classes = $(this).attr('class').split(' ');
-            for (i in classes) {
+            for (var i in classes) {
                 var match = classes[i].match(pattern);
                 if (match) {
                     id = match[1];
@@ -81,7 +160,7 @@ function TreeView() {
             var id;
             var pattern = /^target-(.*)$/;
             var classes = $(this).attr('class').split(' ');
-            for (i in classes) {
+            for (var i in classes) {
                 var match = classes[i].match(pattern);
                 if (match) {
                     id = match[1];
@@ -101,7 +180,7 @@ function TreeView() {
             var transformIndex;
             var pattern = /^target-(.*)-(.*)$/;
             var classes = $(this).attr('class').split(' ');
-            for (i in classes) {
+            for (var i in classes) {
                 var match = classes[i].match(pattern);
                 if (match) {
                     id = match[1];
@@ -166,14 +245,14 @@ function TreeView() {
     this.selectionUpdated = function(event) {
         if (event.deselected) {
             var deselected = event.deselected;
-            for (i in deselected) {
+            for (var i in deselected) {
                 var id = idForGeomPath(deselected[i]);
                 $('#' + id + ' > tbody > tr:nth-child(1)').removeClass('selected');
             }
         }
         if (event.selected) {
             var selected = event.selected;
-            for (i in selected) {
+            for (var i in selected) {
                 var id = idForGeomPath(selected[i]);
                 $('#' + id + ' > tbody > tr:nth-child(1)').addClass('selected');
             }
@@ -181,4 +260,7 @@ function TreeView() {
 
     }
 }
+
+
+
 

@@ -20,16 +20,15 @@ function Action(label, iconPath, fn) {
 function delete_geom() {
     var selected = selectionManager.selected();
     selectionManager.deselectAll();
-    for (i in selected) {
+    for (var i in selected) {
         geom_doc.removeByPath(selected[i]);
-        SceneJS.withNode(selected[i]).parent().remove({node: selected[i]});
     }
 }
 
 
 function create_primitive(type, keys) {
     var geometryParams = {};
-    for (i in keys) {
+    for (var i in keys) {
         geometryParams[keys[i]] = null;
     }
     geom_doc.add(new GeomNode({
@@ -44,7 +43,7 @@ function create_transform(type, keys) {
         return;
     }
     var transformParams = {};
-    for (i in keys) {
+    for (var i in keys) {
         transformParams[keys[i]] = null;
     }
     
@@ -59,75 +58,6 @@ function create_transform(type, keys) {
         }));
 }
 
-
-function add_to_scene(path, tesselation) {
-    tesselation["type"] = "geometry";
-    SceneJS.withNode("geom").add("node", {type: "material",
-                                          id: path,
-                                          emit: 0,
-                                          baseColor:      { r: 0.5, g: 1.0, b: 0.0 },
-                                          specularColor:  { r: 0.9, g: 0.9, b: 0.9 },
-                                          specular:       0.9,
-                                          shine:          100.0,
-                                          nodes: [tesselation]});
-
-    
-    picker.addPickable(path);
-}
-    
-function boolean(type) {
-    if ((type == 'union') || (type == 'intersect')) {
-        if (selectionManager.size() <= 1)  {
-            alert("must have > 2 object selected!");
-            return;
-        }
-    } else if (type =='subtract') {
-        if (selectionManager.size() != 2)  {
-            alert("must have 2 object selected!");
-            return;
-        }
-    }
-    var doFn = function() {
-        var selected = selectionManager.selected();
-        var geometry = {type: type,
-                        children: selected
-                       };
-        
-        $.ajax({
-            type: "POST",
-            url: "/geom/",
-            contentType: "application/json",
-            data: JSON.stringify(geometry),
-            success: function(nodeData){
-                var path = nodeData.path;
-                $.ajax({
-                    type: "GET",
-                    url: path,
-                    success: function(tesselation) {
-                        var childNodes = selected.map(function(x) {
-                            var node = geom_doc.findByPath(x);
-                            geom_doc.remove(node);
-                            return node;
-                        });
-                        geometry["path"] = path;
-                        var boolNode = new GeomNode(geometry, childNodes);
-                        geom_doc.add(boolNode);
-                        
-                        selected.map(function(x) {
-                            SceneJS.withNode(x).parent().remove({node: x});
-                        });
-                        selectionManager.deselectAll();
-                        add_to_scene(path, tesselation);
-                    }
-                });
-            }
-        })};
-    var undoFn = function() {
-    throw Error("not implemented");
-}
-    var cmd = new Command(doFn, undoFn);
-    command_stack.execute(cmd);
-}
 
 $(document).ready(function() {
 

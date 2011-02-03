@@ -25,6 +25,7 @@ function GeomNode() {
     this.parameters = arguments[0].parameters;
     this.parent = undefined;
     this.transforms = [];
+    this.tesselation = arguments[0].tesselation;
 
     this.children = [];
     if (arguments[1]) {

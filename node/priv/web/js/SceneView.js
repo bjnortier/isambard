@@ -1,40 +1,89 @@
-/*
- This example demonstrates how to define geometry, in this case a simple cube
- object that supports texturing.
+function SceneView() {
 
- Lindsay S. Kay,
- lindsay.kay@xeolabs.com
+    this.eye = {x: 50.0, y: 0.0, z: 0.0};
+    this.look = {x: 0.0, y:0.0, z:0.0};
+    this.up = {z: 1.0};
 
- This example assumes that you have looked at a few of the other examples
- and now have an understanding of concepts such as basic SceneJS syntax,
- lighting, material, data flow etc.
+    this.yaw_angle = -45;
+    this.pitch_angle = 20;
+    this.camera_translate = {x: 0, y:0, z:0};
 
- Scroll down to the SceneJS.geometry node about one third of the way downurl
- this file and I'll guide you from there.
+    var add = function(geomNode) {
+        if (!geomNode.prototype) {
+            var sceneNode = {type : "geometry",
+                             indices : geomNode.tesselation.indices,
+                             positions : geomNode.tesselation.positions,
+                             normals : geomNode.tesselation.normals,
+                             primitive : geomNode.tesselation.primitive};
 
- */
-//var geomNode = 
+            SceneJS.withNode("geom").add("node", {type: "material",
+                                                  id: geomNode.path,
+                                                  emit: 0,
+                                                  baseColor:      { r: 0.5, g: 1.0, b: 0.0 },
+                                                  specularColor:  { r: 0.9, g: 0.9, b: 0.9 },
+                                                  specular:       0.9,
+                                                  shine:          100.0,
+                                                  nodes: [sceneNode]});
+            
+            picker.addPickable(geomNode.path);
+        }
+    }
 
-var eye = {x: 50.0, y: 0.0, z: 0.0};
-var look = {x: 0.0, y:0.0, z:0.0};
-var up = {z: 1.0};
-var yaw_angle = -45;
-var pitch_angle = 20;
-var camera_translate = {x: 0, y:0, z:0};
+    var remove = function(geomNode) {
+        if (!geomNode.prototype) {
+            SceneJS.withNode(geomNode.path).parent().remove({node: geomNode.path});
+        }
+    }
 
+    this.selectionUpdated = function(event) {
+        if (event.deselected) {
+            for (var i in event.deselected) {
+                var path = event.deselected[i];
+                SceneJS.withNode(path).set('baseColor', { r: 0.5, g: 1.0, b: 0.0 });
+            }
+        }
+        if (event.selected) {
+            for (var i in event.selected) {
+                var path = event.selected[i];
+                SceneJS.withNode(path).set('baseColor', { r: 1.0, g: 1.0, b: 0.0 });
+            }
+        }
+    }
+
+    this.geomDocUpdated = function(event) {
+
+        if (event.add) {
+            add(event.add);
+        }
+
+        if (event.remove) {
+            remove(event.remove);
+        }
+
+        if (event.update) {
+            remove(event.update);
+            add(event.update);
+        }
+
+
+    }
+
+}
+
+var sceneView = new SceneView();
 
 var scene = new SceneJS.Scene(
     {
-        id: "the-scene",
+        id: "theScene",
         canvasId: "theCanvas",
         loggingElementId: "theLoggingDiv"
     },
     new SceneJS.LookAt(
         {
             id : "lookat",
-            eye : eye,
-            look : look,
-            up : up
+            eye : sceneView.eye,
+            look : sceneView.look,
+            up : sceneView.up
         },
         new SceneJS.Camera(
             {
@@ -73,21 +122,21 @@ var scene = new SceneJS.Scene(
                 }),
             new SceneJS.Translate(
                 {
-                    id : "camera-translate",
-                    x : camera_translate.x,
-                    y : camera_translate.y,
-                    z : camera_translate.z
+                    id : "cameraTranslate",
+                    x : sceneView.camera_translate.x,
+                    y : sceneView.camera_translate.y,
+                    z : sceneView.camera_translate.z
                 },
                 new SceneJS.Rotate(
                     {
                         id: "pitch",
-                        angle: pitch_angle,
+                        angle: sceneView.pitch_angle,
                         y : 1.0
                     },
                     new SceneJS.Rotate(
                         {
                             id: "yaw",
-                            angle: yaw_angle,
+                            angle: sceneView.yaw_angle,
                             z : 1.0
                         },
                         new SceneJS.Material(
@@ -165,32 +214,28 @@ var scene = new SceneJS.Scene(
 );
               
 
-
-
 window.render = function() {
     
-    SceneJS.withNode("pitch").set("angle", pitch_angle);
-    SceneJS.withNode("yaw").set("angle", yaw_angle);
-    SceneJS.withNode("camera-translate").set("x", camera_translate.x);
-    SceneJS.withNode("camera-translate").set("y", camera_translate.y);
-    SceneJS.withNode("camera-translate").set("z", camera_translate.z);
+    SceneJS.withNode("pitch").set("angle", sceneView.pitch_angle);
+    SceneJS.withNode("yaw").set("angle", sceneView.yaw_angle);
+    SceneJS.withNode("cameraTranslate").set("x", sceneView.camera_translate.x);
+    SceneJS.withNode("cameraTranslate").set("y", sceneView.camera_translate.y);
+    SceneJS.withNode("cameraTranslate").set("z", sceneView.camera_translate.z);
 
-    SceneJS.withNode("the-scene").render();
+    SceneJS.withNode("theScene").render();
 };
+
 
 /* Render loop until error or reset
  * (which IDE does whenever you hit that run again button)
  */
 var pInterval;
-
 SceneJS.bind("error", function() {
     window.clearInterval(pInterval);
 });
-
 SceneJS.bind("reset", function() {
     window.clearInterval(pInterval);
 });
-
 pInterval = window.setInterval("window.render()", 10);
 
 
