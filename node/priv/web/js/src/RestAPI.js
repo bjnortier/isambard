@@ -1,16 +1,19 @@
 
 
-function update_geom_command(geomNode) {
+function update_geom_command(precursor, geomNode) {
     var updateChain = [geomNode];
+    var precursorChain = [precursor];
     var parent = geomNode.parent;
     while(parent) {
-        updateChain.push(parent);
+        updateChain.push(parent.editableCopy());
+        precursorChain.push(parent);
         parent = parent.parent;
     }
     console.log('updateChain: ' + updateChain.map(function(node) { return node.path; }));
     
     var chainedPutFn = function() {
         var nextNode = updateChain.splice(0,1)[0];
+        var nextPrecursor = precursorChain.splice(0,1)[0];
         if (nextNode) {
             $.ajax({
                 type: 'PUT',
@@ -31,7 +34,7 @@ function update_geom_command(geomNode) {
                             success: function(tesselation) {
                                 nextNode.tesselation = tesselation;
                                 selectionManager.deselectAll();
-                                geom_doc.update(nextNode);
+                                geom_doc.replace(nextPrecursor, nextNode);
                             }
                         });
                     }
@@ -92,14 +95,13 @@ function create_geom_command(prototype, geometry) {
                     type: 'GET',
                     url: path,
                     success: function(tesselation) {
-                        geom_doc.remove(prototype);
                         var geomNode = new GeomNode({
                             type : geometry.type,
                             path : path,
                             parameters : geometry.parameters,
                             tesselation : tesselation})
                         selectionManager.deselectAll();
-                        geom_doc.add(geomNode);
+                        geom_doc.replace(prototype, geomNode);
                     }
                 });
             }

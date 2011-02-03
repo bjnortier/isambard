@@ -13,8 +13,10 @@ function GeomDocument() {
         this.notify({remove: node});
     }
 
-    this.update = function(node) {
-        this.notify({update: node});
+    this.replace = function(original, replacement) {
+        this.rootNodes.splice(this.rootNodes.indexOf(original), 1, replacement);
+        this.notify({replace: {original : original,
+                               replacement : replacement}});
     }
 
     this.removeByPath = function(path) {

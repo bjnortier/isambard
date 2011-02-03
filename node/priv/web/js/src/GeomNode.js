@@ -8,6 +8,16 @@ function Transform() {
     this.parameters = arguments[0].parameters;
 }
 
+Transform.prototype.editableCopy = function() {
+    var copiedParameters = {};
+    this.parameters.map(function(key) {
+        copiedParameters[key] = this.parameters[key];
+    });
+    return new Transform({type : this.type,
+                          parameters : copiedParameters,
+                          editing : true});
+}
+
 Transform.prototype.json = function() {
     return JSON.stringify({type: this.type,
                            parameters: this.parameters});
@@ -23,11 +33,10 @@ function GeomNode() {
     this.type = arguments[0].type;
     this.path = arguments[0].path;
     this.parameters = arguments[0].parameters;
-    this.parent = undefined;
-    this.transforms = [];
+    this.transforms = arguments[0].transforms || [];
     this.tesselation = arguments[0].tesselation;
+    this.children = arguments[0].children || [];
 
-    this.children = [];
     if (arguments[1]) {
         if (!typeof(arguments[1]) == "object") {
             throw new Error("Children must be array");
@@ -38,7 +47,23 @@ function GeomNode() {
             this.children.push(arguments[1][i]);
         }
     }
+}
 
+GeomNode.prototype.editableCopy = function() {
+
+    var copiedParameters = {};
+    for (key in this.parameters) {
+        copiedParameters[key] = this.parameters[key];
+    }
+    var newNode = new GeomNode({type : this.type,
+                                path : this.path,
+                                parameters : copiedParameters,
+                                transforms : this.transforms,
+                                tesselation : this.tesselation,
+                                children : this.children
+                               });
+    newNode.editing = true;
+    return newNode;
 }
 
 // TODO: Move test for multiple prorotype transforms from doc

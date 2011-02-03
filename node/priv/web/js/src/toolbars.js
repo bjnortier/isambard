@@ -33,7 +33,7 @@ function create_primitive(type, keys) {
     }
     geom_doc.add(new GeomNode({
         type: type,
-        prototype: true,
+        editing: true,
         parameters: geometryParams}));
 }
 
@@ -53,7 +53,7 @@ function create_transform(type, keys) {
         path,
         new Transform({
             type: type,
-            prototype: true,
+            editing: true,
             parameters: transformParams
         }));
 }
