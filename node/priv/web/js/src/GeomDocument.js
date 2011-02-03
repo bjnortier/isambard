@@ -54,25 +54,6 @@ function GeomDocument() {
         return null;
     }
 
-    this.addTransformToNodeWithPath = function(path, transform) {
-        var node = this.findByPath(path);
-        if (node) {
-            // Only one editing transform allowed
-            if (transform.editing) {
-                for (var i in node.transforms) {
-                    if (node.transforms[i].editing) {
-                        throw(new Error('multiple editing transforms not allowed'));
-                    }
-                }
-            }
-
-            node.transforms.push(transform);
-            this.notify({update: node});
-        } else {
-            throw(new Error('node eith path "' + path + '" not found'));
-        }
-    }
-
     this.removeTransformFromNodeWithPath = function(path, transform) {
         var node = this.findByPath(path);
         if (node) {

@@ -122,13 +122,12 @@ function TreeView() {
                 $('#transform-ok').click(function() {
                     for (key in transform.parameters) {
                         transform.parameters[key] = parseFloat($('#' + key).val());
-                        transform.editing = false;
                     }
-                    var cmd = transform_geom_command(geomNode, transform);
+                    var cmd = transform_geom_command(precursor, geomNode, transform);
                     command_stack.execute(cmd);
                 }); 
                 $('#transform-cancel').click(function() {
-                    geom_doc.removeTransformFromNodeWithPath(geomNode.path, transform);
+                    geom_doc.replace(geomNode, precursor);
                 });
             }
         }
@@ -168,6 +167,7 @@ function TreeView() {
             }
             var geomNode = geom_doc.findByPath('/geom/' + id);
             var editingNode = geomNode.editableCopy();
+            editingNode.editing = true;
             geom_doc.replace(geomNode, editingNode);
         });
 

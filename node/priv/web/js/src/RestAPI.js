@@ -53,7 +53,7 @@ function update_geom_command(precursor, geomNode) {
 }
 
 
-function transform_geom_command(geomNode, transform) {
+function transform_geom_command(precursor, geomNode, transform) {
     var doFn = function() {
         $.ajax({
             type: 'PUT',
@@ -61,6 +61,7 @@ function transform_geom_command(geomNode, transform) {
             contentType: 'application/json',
             data: geomNode.json(),
             success: function(nodeData){
+                transform.editing = false;
                 var path = nodeData.path;
                 $.ajax({
                     type: 'GET',
@@ -68,7 +69,7 @@ function transform_geom_command(geomNode, transform) {
                     success: function(tesselation) {
                         geomNode.tesselation = tesselation;
                         selectionManager.deselectAll();
-                        geom_doc.update(geomNode);
+                        geom_doc.replace(precursor, geomNode);
                     }
                 });
             }

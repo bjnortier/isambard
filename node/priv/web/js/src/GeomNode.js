@@ -10,12 +10,12 @@ function Transform() {
 
 Transform.prototype.editableCopy = function() {
     var copiedParameters = {};
-    this.parameters.map(function(key) {
+    for (key in this.parameters) {
         copiedParameters[key] = this.parameters[key];
-    });
+    }
     return new Transform({type : this.type,
                           parameters : copiedParameters,
-                          editing : true});
+                          editing : this.editing});
 }
 
 Transform.prototype.json = function() {
@@ -55,14 +55,17 @@ GeomNode.prototype.editableCopy = function() {
     for (key in this.parameters) {
         copiedParameters[key] = this.parameters[key];
     }
+    var copiedTransforms = this.transforms.map(function(transform) {
+        return transform.editableCopy();
+    });
+        
     var newNode = new GeomNode({type : this.type,
                                 path : this.path,
                                 parameters : copiedParameters,
-                                transforms : this.transforms,
+                                transforms : copiedTransforms,
                                 tesselation : this.tesselation,
                                 children : this.children
                                });
-    newNode.editing = true;
     return newNode;
 }
 

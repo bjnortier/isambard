@@ -48,14 +48,16 @@ function create_transform(type, keys) {
     }
     
     var path = selectionManager.selected()[0];
-
-    geom_doc.addTransformToNodeWithPath(
-        path,
-        new Transform({
-            type: type,
-            editing: true,
-            parameters: transformParams
-        }));
+    
+    var original = geom_doc.findByPath(path);
+    var replacement = original.editableCopy();
+    replacement.transforms.push(new Transform({
+        type: type,
+        editing: true,
+        parameters: transformParams
+    }));
+    geom_doc.replace(original, replacement);
+       
 }
 
 
