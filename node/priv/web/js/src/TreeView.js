@@ -59,7 +59,6 @@ function renderNode(geomNode) {
         transformRows.push(renderTransform(geomNode, i));
     };
 
-    
     // Children
     var childTables = geomNode.children.map(renderNode);
     
@@ -123,7 +122,7 @@ function TreeView() {
                     for (key in transform.parameters) {
                         transform.parameters[key] = parseFloat($('#' + key).val());
                     }
-                    var cmd = transform_geom_command(precursor, geomNode, transform);
+                    var cmd = update_geom_command(precursor, geomNode, transform);
                     command_stack.execute(cmd);
                 }); 
                 $('#transform-cancel').click(function() {

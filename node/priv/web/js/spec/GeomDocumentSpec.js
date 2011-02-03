@@ -27,6 +27,20 @@ describe('GeomDocument', function() {
         expect(doc.rootNodes.length).toEqual(0);
         
     });
+
+    it('can replace nodes', function() {
+        var child = new GeomNode({type: 'cuboid', path: '/3'});
+        var parent = new GeomNode({type: 'cuboid', path: '/2'}, [child]);
+        var grandparent = new GeomNode({type: 'sphere', path: '/1'}, [parent]);
+
+        doc.add(grandparent);
+
+        var child2 = new GeomNode({type: 'cuboid', path: '/3_b'});
+
+        doc.replace(child, child2);
+        expect(doc.findByPath(child2.path)).toEqual(child2);
+        expect(doc.ancestors(child2)).toEqual([parent, grandparent]);
+    });
     
     it('can be used to find nodes', function() {
         var node1 = new GeomNode({type: 'sphere', path: '/1'});
@@ -47,25 +61,21 @@ describe('GeomDocument', function() {
         expect(doc.findByPath('/2')).toEqual(node2);
     });
 
-    it('can manipulate transforms to a node', function() {
-        var node1 = new GeomNode({type: 'sphere', path: '/1'});
-        doc.add(node1);
+    it('can be used to determine the ancestors of a node', function() {
+        var child = new GeomNode({type: 'cuboid', path: '/3'});
+        var parent = new GeomNode({type: 'cuboid', path: '/2'}, [child]);
+        var grandparent = new GeomNode({type: 'sphere', path: '/1'}, [parent]);
 
-        var transform = new Transform({type: 'translate',
-                                       editing: true,
-                                       parameters: {dx: 1,
-                                                    dy: 1,
-                                                    dz: 1}});
-        doc.addTransformToNodeWithPath('/1', transform);
-        expect(node1.transforms.length).toEqual(1);
+        doc.add(grandparent);
+        
+        expect(doc.ancestors(child)).toEqual([parent, grandparent]);
+        expect(doc.ancestors(parent)).toEqual([grandparent]);
+        expect(doc.ancestors(grandparent)).toEqual([]);
+
 
         expect(function() {
-            doc.addTransformToNodeWithPath('/1', transform)
-        }).toThrow(new Error('multiple editing transforms not allowed'));
-
-        // Remove
-        doc.removeTransformFromNodeWithPath('/1', transform);
-        expect(node1.transforms.length).toEqual(0);
+            doc.ancestors(new GeomNode({type: 'cuboid'}));
+        }).toThrow("node not found");
     });
        
 

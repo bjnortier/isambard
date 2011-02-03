@@ -33,8 +33,6 @@ describe("GeomNode", function() {
         expect(parentNode.children[0]).toEqual(child1);
         expect(parentNode.children[1]).toEqual(child2);
 
-        expect(child1.parent).toEqual(parentNode);
-        expect(child2.parent).toEqual(parentNode);
     });
 
 

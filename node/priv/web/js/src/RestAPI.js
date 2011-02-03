@@ -1,14 +1,14 @@
 
 
-function update_geom_command(precursor, geomNode) {
-    var updateChain = [geomNode];
-    var precursorChain = [precursor];
-    var parent = geomNode.parent;
-    while(parent) {
-        updateChain.push(parent.editableCopy());
-        precursorChain.push(parent);
-        parent = parent.parent;
-    }
+function update_geom_command(precursor, geomNode, transform) {
+    var ancestors = geom_doc.ancestors(geomNode);
+    var ancestorCopies = ancestors.map(function(ancestor) {
+        return ancestor.editableCopy();
+    });
+
+    var updateChain = [geomNode].concat(ancestors);
+    var precursorChain = [precursor].concat(ancestorCopies);
+
     console.log('updateChain: ' + updateChain.map(function(node) { return node.path; }));
     
     var chainedPutFn = function() {
@@ -23,6 +23,11 @@ function update_geom_command(precursor, geomNode) {
                 success: function(nodeData) {
                     if (nextNode.editing) {
                         nextNode.editing = false;
+                    }
+                    for (var i in nextNode.transforms) {
+                        if (nextNode[i].transform.editing) {
+                            nextNode[i].transform.editing = false;
+                        }
                     }
                     if (updateChain.length > 0) {
                         chainedPutFn();
@@ -53,7 +58,7 @@ function update_geom_command(precursor, geomNode) {
 }
 
 
-function transform_geom_command(precursor, geomNode, transform) {
+/*function transform_geom_command(precursor, geomNode, transform) {
     var doFn = function() {
         $.ajax({
             type: 'PUT',
@@ -79,7 +84,7 @@ function transform_geom_command(precursor, geomNode, transform) {
         throw Error('not implemented');
     }
     return new Command(doFn, undoFn);
-}
+}*/
 
 
 function create_geom_command(prototype, geometry) {

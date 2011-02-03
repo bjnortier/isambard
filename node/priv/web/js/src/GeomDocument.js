@@ -14,7 +14,17 @@ function GeomDocument() {
     }
 
     this.replace = function(original, replacement) {
-        this.rootNodes.splice(this.rootNodes.indexOf(original), 1, replacement);
+        var recurFn = function(children) {
+            var index = children.indexOf(original);
+            if (index > -1 ) {
+                children.splice(index,1,replacement);
+            } else {
+                for (i in children) {
+                    recurFn(children[i].children);
+                }
+            }
+        }
+        recurFn(this.rootNodes);
         this.notify({replace: {original : original,
                                replacement : replacement}});
     }
@@ -54,20 +64,31 @@ function GeomDocument() {
         return null;
     }
 
-    this.removeTransformFromNodeWithPath = function(path, transform) {
-        var node = this.findByPath(path);
-        if (node) {
-            node.transforms.splice(node.transforms.indexOf(transform),1);
-            this.notify({update: node});
-        } else {
-            throw(new Error('node with path "' + path + '" not found'));
+    this.ancestors = function(nodeToFind) {
+        var recurFn = function(recurNode, ancestors) {
+            if (recurNode == nodeToFind) {
+                return ancestors;
+            } else {
+                var newAncestors = ancestors.slice();
+                newAncestors.push(recurNode);
+
+                for (i in recurNode.children) {
+                    var child = recurNode.children[i];
+                    var childResult = recurFn(child, newAncestors);
+                    if (childResult) {
+                        return childResult;
+                    }
+                }
+            }
+            return null;
         }
-    }
-    
-    this.iterate = function(iterator) {
         for (var i in this.rootNodes) {
-            iterator(this.rootNodes[i]);
+            var result = recurFn(this.rootNodes[i], []);
+            if (result) {
+                return result.reverse();
+            }
         }
+        throw Error("node not found");
     }
 
     Observable.makeObservable(this);

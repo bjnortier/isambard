@@ -35,7 +35,7 @@ function GeomNode() {
     this.parameters = arguments[0].parameters;
     this.transforms = arguments[0].transforms || [];
     this.tesselation = arguments[0].tesselation;
-    this.children = arguments[0].children || [];
+    this.children = [];
 
     if (arguments[1]) {
         if (!typeof(arguments[1]) == "object") {
@@ -43,7 +43,6 @@ function GeomNode() {
         }
 
         for (var i in arguments[1]) {
-            arguments[1][i].parent = this;
             this.children.push(arguments[1][i]);
         }
     }
