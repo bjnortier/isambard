@@ -5,14 +5,16 @@ function renderTransform(geomNode, transformIndex) {
     for (key in transform.parameters) {
         paramsArr.push({key: key,
                         value: transform.parameters[key],
-                        clazz: 'edit-transform target-' + id + '-' + transformIndex,
+                        
+                        'edit-class': 'edit-transform target-' + id + '-' + transformIndex,
                         editing: transform.editing
                        });
     }
     
-    var template = '<table><tr><td>{{type}}</td></tr><tr><td><table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^editing}}<span class="{{clazz}}">{{value}}</span>{{/editing}}{{#editing}}<input id="{{key}}" type="text" value="{{value}}">{{/editing}}</td></tr>{{/paramsArr}}</td></tr></table>{{#editing}}<tr><td><input id="transform-ok" type="submit" value="Ok"/><input id="transform-cancel" type="submit" value="Cancel"/></td></tr>{{/editing}}</table>';
+    var template = '<table><tr><td>{{type}}{{^editing}}<img class="{{delete-class}}" src="/images/delete_button.png" alt="delete"/>{{/editing}}</td></tr><tr><td><table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^editing}}<span class="{{edit-class}}">{{value}}</span>{{/editing}}{{#editing}}<input id="{{key}}" type="text" value="{{value}}">{{/editing}}</td></tr>{{/paramsArr}}</td></tr></table>{{#editing}}<tr><td><input id="transform-ok" type="submit" value="Ok"/><input id="transform-cancel" type="submit" value="Cancel"/></td></tr>{{/editing}}</table>';
     var transformTable = $.mustache(template, {
         type: transform.type,
+        'delete-class': 'delete-transform target-' + id + '-' + transformIndex,
         paramsArr: paramsArr,
         editing: transform.editing});
     return transformTable;
@@ -122,7 +124,7 @@ function TreeView() {
                     for (key in transform.parameters) {
                         transform.parameters[key] = parseFloat($('#' + key).val());
                     }
-                    var cmd = update_geom_command(precursor, geomNode, transform);
+                    var cmd = update_geom_command(precursor, geomNode);
                     command_stack.execute(cmd);
                 }); 
                 $('#transform-cancel').click(function() {
@@ -183,16 +185,31 @@ function TreeView() {
                     transformIndex = match[2];
                 }
             }
-            if (!id) {
-                throw Error('id for editing could not be determined');
-            }
-            if (!transformIndex) {
-                throw Error('transformIndex for editing could not be determined');
-            }
             var geomNode = geom_doc.findByPath('/geom/' + id);
             var editingNode = geomNode.editableCopy();
             editingNode.transforms[transformIndex].editing = true;
             geom_doc.replace(geomNode, editingNode);
+        });
+
+        // Delete transform
+        $('.delete-transform').click(function() {
+            var id;
+            var transformIndex;
+            var pattern = /^target-(.*)-(.*)$/;
+            var classes = $(this).attr('class').split(' ');
+            for (var i in classes) {
+                var match = classes[i].match(pattern);
+                if (match) {
+                    id = match[1];
+                    transformIndex = match[2];
+                }
+            }
+            var geomNode = geom_doc.findByPath('/geom/' + id);
+            var editingNode = geomNode.editableCopy();
+            editingNode.transforms.splice(transformIndex, 1);
+            geom_doc.replace(geomNode, editingNode);
+            var cmd = update_geom_command(geomNode, editingNode);
+            command_stack.execute(cmd);
         });
 
         // Show/Hide

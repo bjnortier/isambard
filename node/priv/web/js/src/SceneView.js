@@ -30,7 +30,12 @@ function SceneView() {
     }
 
     var remove = function(geomNode) {
-        if (geomNode.path && SceneJS.nodeExists(geomNode.path)) {
+        if (geomNode.path 
+            && 
+            SceneJS.nodeExists(geomNode.path) 
+            && 
+            SceneJS.withNode(geomNode.path).parent()) {
+
             SceneJS.withNode(geomNode.path).parent().remove({node: geomNode.path});
         }
     }

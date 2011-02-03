@@ -59,6 +59,13 @@ body {
     cursor: pointer;
 }
 
+.delete-transform {
+    color: #900;
+    text-align: right;
+    cursor: pointer;
+    padding-left: 5px;
+}
+
 /* ---------------------------------- Toolbar ------------------------------------ */
 
 

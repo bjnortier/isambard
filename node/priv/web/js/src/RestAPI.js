@@ -1,6 +1,6 @@
 
 
-function update_geom_command(precursor, geomNode, transform) {
+function update_geom_command(precursor, geomNode) {
     var ancestors = geom_doc.ancestors(geomNode);
     var ancestorCopies = ancestors.map(function(ancestor) {
         return ancestor.editableCopy();
