@@ -113,11 +113,16 @@ $(document).ready(function() {
     new Action("mirror", "/images/mirror.png", 
                function(parameters) { create_transform("mirror", ["px", "py", "pz", "vx", "vy", "vz"]); }).render($("#transforms"));
 
-
+    /*
+     * Copy & Transform
+     */
     new Action("copy_translate", "/images/copy_translate.png", 
-               function(parameters) { create_transform("copy_translate", ["dx", "dy", "dz", "n"]); }).render($("#transforms"));
+               function(parameters) { create_transform("copy_translate", ["dx", "dy", "dz", "n"]); }).render($("#copy_transforms"));
     new Action("copy_rotate", "/images/copy_rotate.png", 
-               function(parameters) { create_transform("copy_rotate", ["px", "py", "pz", "vx", "vy", "vz", "angle", "n"]); }).render($("#transforms"));
+               function(parameters) { create_transform("copy_rotate", ["px", "py", "pz", "vx", "vy", "vz", "angle", "n"]); }).render($("#copy_transforms"));
+    new Action("copy_mirror", "/images/copy_mirror.png", 
+               function(parameters) { create_transform("copy_mirror", ["px", "py", "pz", "vx", "vy", "vz"]); }).render($("#copy_transforms"));
+
 
 
 

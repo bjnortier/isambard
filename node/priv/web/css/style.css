@@ -21,7 +21,7 @@ body {
 #geom-model-doc {
     position: absolute;
     left: 20px;
-    top: 260px;
+    top: 320px;
     color: white;
 }
 
@@ -93,6 +93,12 @@ body {
     position:absolute;
     left:20px;
     top:200px;
+}
+
+#copy_transforms {
+    position:absolute;
+    left:20px;
+    top:260px;
 }
 
 

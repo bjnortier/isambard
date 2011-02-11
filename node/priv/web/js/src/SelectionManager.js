@@ -54,40 +54,25 @@ function SelectionManager() {
                 deselected.push(selected[i]);
             }
         }
+        selected = [path];
         
         this.notify({deselected : deselected});
         if (!found) {
             this.notify({selected : [path]});
         }
-        selected = [path];
     }
     
     this.deselectAll = function() {
         if (selected.length > 0) {
-            this.notify({deselected : selected});
+            var deselected = selected;
             selected = [];
+            this.notify({deselected : deselected});
         }
     }
 
 }
 var selectionManager = new SelectionManager();
 Observable.makeObservable(selectionManager);
-
-// TODO: Action Validation
-/*Interaction.addListener(function() {
-    
-    if (Interaction.selected.length == 1) {
-        $('#action_stl').unbind('click');
-        var pattern = /^\/geom\/(.*)$/;
-        var id = Interaction.selected[0].match(pattern)[1];
-        $('#action_stl').attr('href', '/stl/' + id); 
-    } else {
-        $('#action_stl').click(function() {
-            alert("select one object"); 
-            return false;
-        });
-    }
-});*/
 
 
 

@@ -206,6 +206,29 @@ TopoDS_Shape rotate(map<string, mValue> transform, TopoDS_Shape shape) {
     return transformed_shape;
 }
 
+TopoDS_Shape copy_mirror(map<string, mValue> transform, TopoDS_Shape shape) {
+    map< string, mValue > parameters = transform["parameters"].get_obj();
+    mValue px = parameters["px"];
+    mValue py = parameters["py"];
+    mValue pz = parameters["pz"];
+    mValue vx = parameters["vx"];
+    mValue vy = parameters["vy"];
+    mValue vz = parameters["vz"];
+    
+    gp_Trsf transformation = gp_Trsf();
+    transformation.SetMirror(gp_Ax1(gp_Pnt(get_double(px),
+                                           get_double(py),
+                                           get_double(pz)), 
+                                    gp_Dir(get_double(vx),
+                                           get_double(vy),
+                                           get_double(vz)))); 
+    
+    BRepBuilderAPI_Transform brep_transform(shape, transformation);
+    TopoDS_Shape transformed_shape = brep_transform.Shape();
+    
+    TopoDS_Shape result = BRepAlgoAPI_Fuse(transformed_shape, shape);
+    return result;
+}
 
 TopoDS_Shape copy_translate(map<string, mValue> transform, TopoDS_Shape shape) {
     map< string, mValue > parameters = transform["parameters"].get_obj();
@@ -293,6 +316,9 @@ TopoDS_Shape applyTransform(map<string, mValue> transform, TopoDS_Shape shape) {
     }
     if (!transformType.is_null() && (transformType.type() == str_type) && (transformType.get_str() == string("copy_rotate"))) {
         return copy_rotate(transform, shape);
+    }
+    if (!transformType.is_null() && (transformType.type() == str_type) && (transformType.get_str() == string("copy_mirror"))) {
+        return copy_mirror(transform, shape);
     }
     
     
