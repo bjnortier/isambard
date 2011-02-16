@@ -53,41 +53,59 @@ function update_geom_command(precursor, geomNode) {
     };
     var undoFn = function() {
         throw Error('not implemented');
+    };
+    var redoFn = function() {
+        throw Error('not implemented');
     }
-    return new Command(doFn, undoFn);
+
+    return new Command(doFn, undoFn, redoFn);
 }
 
 
 function create_geom_command(prototype, geometry) {
     
-    var doFn = function() {
-        $.ajax({
-            type: 'POST',
-            url: '/geom/',
-            contentType: 'application/json',
-            data: JSON.stringify(geometry),
-            success: function(nodeData){
-                var path = nodeData.path;
+    var fns = 
+        (function() {
+            var id;
+            var geomNode;
+            var doFn = function() {
                 $.ajax({
-                    type: 'GET',
-                    url: '/tesselation/' + idForGeomPath(nodeData.path),
-                    success: function(tesselation) {
-                        var geomNode = new GeomNode({
-                            type : geometry.type,
-                            path : path,
-                            parameters : geometry.parameters,
-                            tesselation : tesselation})
-                        selectionManager.deselectAll();
-                        geom_doc.replace(prototype, geomNode);
+                    type: 'POST',
+                    url: '/geom/',
+                    contentType: 'application/json',
+                    data: JSON.stringify(geometry),
+                    success: function(nodeData){
+                        var path = nodeData.path;
+                        id = idForGeomPath(nodeData.path);
+                        $.ajax({
+                            type: 'GET',
+                            url: '/tesselation/' + id,
+                            success: function(tesselation) {
+                                geomNode = new GeomNode({
+                                    type : geometry.type,
+                                    path : path,
+                                    parameters : geometry.parameters,
+                                    tesselation : tesselation})
+                                selectionManager.deselectAll();
+                                geom_doc.replace(prototype, geomNode);
+                            }
+                        });
                     }
                 });
+            };
+            var undoFn = function() {
+                geom_doc.remove(geomNode);
             }
-        });
-    };
-    var undoFn = function() {
-        throw Error('not implemented');
-    }
-    return new Command(doFn, undoFn);
+            var redoFn = function() {
+                geom_doc.add(geomNode);
+            }
+
+            return { doFn : doFn,
+                     undoFn : undoFn,
+                     redoFn : redoFn }
+        })();
+            
+    return new Command(fns.doFn, fns.undoFn, fns.redoFn);
 }
 
 
@@ -103,40 +121,62 @@ function boolean(type) {
             return;
         }
     }
-    var doFn = function() {
-        var selected = selectionManager.selected();
-        var geometry = {type: type,
-                        children: selected
-                       };
-        
-        $.ajax({
-            type: "POST",
-            url: "/geom/",
-            contentType: "application/json",
-            data: JSON.stringify(geometry),
-            success: function(nodeData){
-                var path = nodeData.path;
-                $.ajax({
-                    type: "GET",
-                    url: '/tesselation/' + idForGeomPath(nodeData.path),
-                    success: function(tesselation) {
-                        var childNodes = selected.map(function(x) {
-                            var node = geom_doc.findByPath(x);
-                            geom_doc.remove(node);
-                            return node;
-                        });
-                        geometry["path"] = path;
-                        var boolNode = new GeomNode(geometry, childNodes);
-                        boolNode.tesselation = tesselation;
-                        selectionManager.deselectAll();
-                        geom_doc.add(boolNode);
-                    }
-                });
-            }
-        })};
-    var undoFn = function() {
-    throw Error("not implemented");
-    }
-    var cmd = new Command(doFn, undoFn);
+    var fns = (function() {
+
+        var id;
+        var boolNode;
+        var childNodes;
+
+        var doFn = function() {
+            var selected = selectionManager.selected();
+            var geometry = {type: type,
+                            children: selected
+                           };
+            
+            $.ajax({
+                type: "POST",
+                url: "/geom/",
+                contentType: "application/json",
+                data: JSON.stringify(geometry),
+                success: function(nodeData){
+                    var path = nodeData.path;
+                    id = id = idForGeomPath(nodeData.path);
+                    $.ajax({
+                        type: "GET",
+                        url: '/tesselation/' + id,
+                        success: function(tesselation) {
+                            childNodes = selected.map(function(x) {
+                                var node = geom_doc.findByPath(x);
+                                geom_doc.remove(node);
+                                return node;
+                            });
+                            geometry["path"] = path;
+                            boolNode = new GeomNode(geometry, childNodes);
+                            boolNode.tesselation = tesselation;
+                            selectionManager.deselectAll();
+                            geom_doc.add(boolNode);
+                        }
+                    });
+                }
+            })};
+        var undoFn = function() {
+            geom_doc.remove(boolNode);
+            childNodes.reverse().map(function(x) {
+                geom_doc.add(x);
+            });
+        }
+        var redoFn = function() {
+            childNodes.map(function(x) {
+                geom_doc.remove(x);
+            });
+            geom_doc.add(boolNode);
+        }
+
+        return {doFn : doFn,
+                undoFn : undoFn,
+                redoFn : redoFn}
+    })();
+
+    var cmd = new Command(fns.doFn, fns.undoFn, fns.redoFn);
     command_stack.execute(cmd);
 }

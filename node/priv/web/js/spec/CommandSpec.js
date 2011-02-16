@@ -15,6 +15,9 @@ describe("Command", function() {
             },
             function() {
                 doc.remove(node);
+            },
+            function() {
+                doc.add(node);
             }
         );
         
@@ -38,7 +41,11 @@ describe("CommandStack", function() {
         },
         function() {
             a -= 1;
-        });
+        },
+        function() {
+            a += 1;
+        }
+    );
     
     it("can execute commands", function() {
         stack.execute(cmd);

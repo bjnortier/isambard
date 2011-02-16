@@ -1,9 +1,12 @@
 
-function Command(doFn, undoFn) {
-    var _doFn = doFn;
-    var _undoFn = undoFn;
-    this.do = function() { _doFn(); };
-    this.undo = function() { _undoFn(); };
+function Command(doFn, undoFn, redoFn) {
+    var doFn = doFn;
+    var undoFn = undoFn;
+    var redoFn = redoFn;
+
+    this.do = function() { doFn(); };
+    this.undo = function() { undoFn(); };
+    this.redo = function() { redoFn(); };
 }
 
 function CommandStack() {
@@ -24,7 +27,7 @@ function CommandStack() {
 
     this.redo = function() {
         last_executed_index += 1;
-        commands[last_executed_index].do();
+        commands[last_executed_index].redo();
     };
 
     this.canUndo = function() {
