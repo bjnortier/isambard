@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -export([start_link/0, stop/0]).
--export([exists/1, raw_geom_record/1, create/1, update/2, tesselation/1, stl/1]).
+-export([exists/1, raw_geom_record/1, create/1, update/2, geometry/1, tesselation/1, stl/1]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                              Public API                                  %%%
@@ -21,6 +21,8 @@ create(Geometry) ->
     gen_server:call(?MODULE, {create, Geometry}, 30000).
 update(Id, Geometry) ->
     gen_server:call(?MODULE, {update, Id, Geometry}, 30000).
+geometry(Id) ->
+    gen_server:call(?MODULE, {geometry, Id}, 30000).
 tesselation(Id) ->
     gen_server:call(?MODULE, {tesselation, Id}, 30000).
 stl(Id) ->
@@ -52,21 +54,45 @@ handle_call({create, Geometry}, _From, State) ->
     {struct, GeomProps} = Geometry,
     {<<"type">>, GeomType} = lists:keyfind(<<"type">>, 1, GeomProps),
     Id = uuid(),
-    Tesselation = create_type(Id, GeomType, Geometry),
-    {reply, Id, [{Id, #geom_doc{ geometry = Geometry,
-                                 tesselation = Tesselation }}|State]};
+    Reply = case create_type(Id, GeomType, Geometry) of
+                "\"ok\"" ->
+                    Id;
+                Error ->
+                    {error, Error}
+            end,
+    {reply, Reply, [{Id, #geom_doc{ geometry = Geometry }}|State]};
 handle_call({update, Id, Geometry}, _From, State) ->
     {struct, GeomProps} = Geometry,
     {<<"type">>, GeomType} = lists:keyfind(<<"type">>, 1, GeomProps),
-    Tesselation = create_type(Id, GeomType, Geometry),
-    {reply, Id, lists:keyreplace(Id, 1, State, {Id, #geom_doc{ geometry = Geometry,
-                                                               tesselation = Tesselation }})};
+    Reply = case create_type(Id, GeomType, Geometry) of
+                "\"ok\"" ->
+            Id;
+                Error ->
+                    {error, Error}
+            end,
+    {reply, Reply, lists:keyreplace(Id, 1, State, {Id, #geom_doc{ geometry = Geometry }})};
+handle_call({geometry, Id}, _From, State) ->
+    Reply = case lists:keyfind(Id, 1, State) of
+                {Id, Record} -> 
+                    Record#geom_doc.geometry;
+                false -> 
+                    undefined
+            end,
+    {reply, Reply, State};
 handle_call({tesselation, Id}, _From, State) ->
     Reply = case lists:keyfind(Id, 1, State) of
-                 {Id, Record} -> 
-                     Record#geom_doc.tesselation;
-                 false -> 
-                     undefined
+                {Id, Record} -> 
+                    case Record#geom_doc.tesselation of
+                        undefined ->
+                            io:format("tesselating ~p~n", [Id]),
+                            node_worker_server:call(
+                              mochijson2:encode(
+                                {struct, [{<<"tesselate">>, list_to_binary(Id)}]}));
+                        T ->
+                            T
+                    end;
+                false -> 
+                    undefined
             end,
     {reply, Reply, State};
 handle_call({stl, Id}, _From, State) ->

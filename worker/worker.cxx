@@ -342,7 +342,7 @@ TopoDS_Shape applyTransforms(TopoDS_Shape shape, map< string, mValue > geometry)
     
 #pragma mark Primitives
 
-mValue create_cuboid(string id, map< string, mValue > geometry) {
+string create_cuboid(string id, map< string, mValue > geometry) {
     map< string, mValue > parameters = geometry["parameters"].get_obj();
     mValue width = parameters["width"];
     mValue depth = parameters["depth"];
@@ -358,23 +358,23 @@ mValue create_cuboid(string id, map< string, mValue > geometry) {
                                                  get_double(height)).Shape();
         
         shapes[id] = applyTransforms(shape, geometry);
-        return tesselate(id);
+        return "ok";
     }
-    return  mValue("invalid geometry parameters");
+    return "invalid geometry parameters";
 }
 
-mValue create_sphere(string id, map< string, mValue > geometry) {
+string create_sphere(string id, map< string, mValue > geometry) {
     map< string, mValue > parameters = geometry["parameters"].get_obj();
     mValue radius = parameters["radius"];
     if (!radius.is_null() && ((radius.type() == real_type) || (radius.type() == int_type))) {
         TopoDS_Shape shape = BRepPrimAPI_MakeSphere(get_double(radius)).Shape();
         shapes[id] = applyTransforms(shape, geometry);
-        return tesselate(id);
+        return "ok";
     }
-    return  mValue("invalid geometry parameters");
+    return "invalid geometry parameters";
 }
 
-mValue create_cylinder(string id, map< string, mValue > geometry) {
+string create_cylinder(string id, map< string, mValue > geometry) {
     map< string, mValue > parameters = geometry["parameters"].get_obj();
     mValue radius = parameters["radius"];
     mValue height = parameters["height"];
@@ -385,12 +385,12 @@ mValue create_cylinder(string id, map< string, mValue > geometry) {
         TopoDS_Shape shape = BRepPrimAPI_MakeCylinder(get_double(radius), 
                                                       get_double(height)).Shape();
         shapes[id] = applyTransforms(shape, geometry);
-        return tesselate(id);
+        return "ok";
     }
-    return  mValue("invalid geometry parameters");
+    return "invalid geometry parameters";
 }
 
-mValue create_cone(string id, map< string, mValue > geometry) {
+string create_cone(string id, map< string, mValue > geometry) {
     map< string, mValue > parameters = geometry["parameters"].get_obj();
     mValue bottom_radius = parameters["bottom_radius"];
     mValue top_radius = parameters["top_radius"];
@@ -405,12 +405,12 @@ mValue create_cone(string id, map< string, mValue > geometry) {
                                                   get_double(top_radius), 
                                                   get_double(height)).Shape();
         shapes[id] = applyTransforms(shape, geometry);
-        return tesselate(id);
+        return "ok";
     }
-    return  mValue("invalid geometry parameters");
+    return "invalid geometry parameters";
 }
 
-mValue create_wedge(string id, map< string, mValue > geometry) {
+string create_wedge(string id, map< string, mValue > geometry) {
     map< string, mValue > parameters = geometry["parameters"].get_obj();
     mValue x1 = parameters["x1"];
     mValue x2 = parameters["x2"];
@@ -429,12 +429,12 @@ mValue create_wedge(string id, map< string, mValue > geometry) {
                                                    get_double(z), 
                                                    get_double(x2)).Shape();
         shapes[id] = applyTransforms(shape, geometry);
-        return tesselate(id);
+        return "ok";
     }
-    return  mValue("invalid geometry parameters");
+    return "invalid geometry parameters";
 }
 
-mValue create_torus(string id, map< string, mValue > geometry) {
+string create_torus(string id, map< string, mValue > geometry) {
     map< string, mValue > parameters = geometry["parameters"].get_obj();
     mValue r1 = parameters["r1"];
     mValue r2 = parameters["r2"];
@@ -445,14 +445,14 @@ mValue create_torus(string id, map< string, mValue > geometry) {
         TopoDS_Shape shape = BRepPrimAPI_MakeTorus(get_double(r1), 
                                                    get_double(r2)).Shape();
         shapes[id] = applyTransforms(shape, geometry);
-        return tesselate(id);
+        return "ok";
     }
-    return  mValue("invalid geometry parameters");
+    return "invalid geometry parameters";
 }
 
 #pragma mark Boolean
 
-mValue create_union(string id, map< string, mValue > geometry) {
+string create_union(string id, map< string, mValue > geometry) {
     mArray children = geometry["children"].get_array();
     if (children.size() < 2) {
         return("invalid children");
@@ -465,10 +465,10 @@ mValue create_union(string id, map< string, mValue > geometry) {
                                          shapes[children[i].get_str()]).Shape();
     }
     shapes[id] = applyTransforms(boolean_shape, geometry);
-    return tesselate(id);
+    return "ok";
 }
 
-mValue create_intersect(string id, map< string, mValue > geometry) {
+string create_intersect(string id, map< string, mValue > geometry) {
     mArray children = geometry["children"].get_array();
     if (children.size() < 2) {
         return("invalid children");
@@ -481,10 +481,10 @@ mValue create_intersect(string id, map< string, mValue > geometry) {
                                          shapes[children[i].get_str()]).Shape();
     }
     shapes[id] = applyTransforms(boolean_shape, geometry);
-    return tesselate(id);
+    return "ok";
 }
 
-mValue create_subtract(string id, map< string, mValue > geometry) {
+string create_subtract(string id, map< string, mValue > geometry) {
     mArray children = geometry["children"].get_array();
     if (children.size() != 2) {
         return("only 2 children supported");
@@ -493,10 +493,10 @@ mValue create_subtract(string id, map< string, mValue > geometry) {
     TopoDS_Shape boolean_shape = BRepAlgoAPI_Cut(shapes[children[1].get_str()], 
                                                  shapes[children[0].get_str()]).Shape();
     shapes[id] = applyTransforms(boolean_shape, geometry);
-    return tesselate(id);
+    return "ok";
 }
 
-mValue create_geometry(string id, map< string, mValue > geometry) {
+string create_geometry(string id, map< string, mValue > geometry) {
     mValue geomType = geometry["type"];
     /*
      * Primitives
@@ -532,7 +532,7 @@ mValue create_geometry(string id, map< string, mValue > geometry) {
     if (!geomType.is_null() && (geomType.type() == str_type) && (geomType.get_str() == string("intersect"))) {
         return create_intersect(id, geometry);
     }
-    return mValue("geometry type not found");
+    return "geometry type not found";
 }
 
 int read_exact(unsigned char *buf, int len) {
@@ -600,8 +600,15 @@ int main (int argc, char *argv[]) {
                     && 
                     !geometry.is_null() && (geometry.type() == obj_type)) {
                     
-                    
-                    mValue response = create_geometry(id.get_str(), mObject(geometry.get_obj()));
+                    string response = create_geometry(id.get_str(), mObject(geometry.get_obj()));
+                    string output = write(mValue(response));
+                    write_cmd(output.c_str(), output.size());
+                    continue;
+                }
+                
+                mValue tesselateId = objMap["tesselate"];
+                if (!tesselateId.is_null() && (tesselateId.type() == str_type)) {
+                    mValue response = tesselate(tesselateId.get_str());
                     string output = write(response);
                     write_cmd(output.c_str(), output.size());
                     continue;

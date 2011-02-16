@@ -35,7 +35,7 @@ function update_geom_command(precursor, geomNode) {
                         // No more -> update the root node
                         $.ajax({
                             type: 'GET',
-                            url: nextNode.path,
+                            url: '/tesselation/' + idForGeomPath(nodeData.path),
                             success: function(tesselation) {
                                 nextNode.tesselation = tesselation;
                                 selectionManager.deselectAll();
@@ -70,7 +70,7 @@ function create_geom_command(prototype, geometry) {
                 var path = nodeData.path;
                 $.ajax({
                     type: 'GET',
-                    url: path,
+                    url: '/tesselation/' + idForGeomPath(nodeData.path),
                     success: function(tesselation) {
                         var geomNode = new GeomNode({
                             type : geometry.type,
@@ -118,7 +118,7 @@ function boolean(type) {
                 var path = nodeData.path;
                 $.ajax({
                     type: "GET",
-                    url: path,
+                    url: '/tesselation/' + idForGeomPath(nodeData.path),
                     success: function(tesselation) {
                         var childNodes = selected.map(function(x) {
                             var node = geom_doc.findByPath(x);

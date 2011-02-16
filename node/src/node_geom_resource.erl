@@ -23,19 +23,24 @@ allowed_methods(ReqData, Context) ->
     {['GET', 'POST', 'PUT'], ReqData, Context}.
 
 resource_exists(ReqData, Context) ->
-    %% TODO: Ask document_db if geom exists
-    {true, ReqData, Context}.
+    case wrq:method(ReqData) of
+        'POST' ->
+            {true, ReqData, Context};
+        _ ->
+            Exists = node_document_db:exists(Context#context.id),
+            {Exists, ReqData, Context}
+    end.
 
 content_types_provided(ReqData, Context) ->
     {[{"application/json", provide_content}], ReqData, Context}.
 
 provide_content(ReqData, Context) ->
     Id = Context#context.id,
-    case node_document_db:tesselation(Id) of
+    case node_document_db:geometry(Id) of
         undefined ->
             {"not found", ReqData, Context};
         Tesselation ->
-            {Tesselation, ReqData, Context}
+            {mochijson2:encode(Tesselation), ReqData, Context}
     end.
 
 content_types_accepted(ReqData, Context) ->
