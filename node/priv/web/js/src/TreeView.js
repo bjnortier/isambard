@@ -85,6 +85,28 @@ function TreeView() {
 
     this.addEvents = function(precursor, geomNode) {
 
+        var hideNode = function(nodeElement) {
+            nodeElement.attr('src', '/images/arrow_hidden.png');
+            nodeElement.removeClass('siblings-showing');
+            var otherRows = nodeElement.parent().parent().siblings();
+            otherRows.hide();
+        }
+
+        var showNode = function(nodeElement) {
+            nodeElement.attr('src', '/images/arrow_showing.png');
+            nodeElement.addClass('siblings-showing');
+            var otherRows = nodeElement.parent().parent().siblings();
+            otherRows.show();
+        }
+        
+        var toggleShowHide = function(nodeElement) {
+            if ($(nodeElement).hasClass('siblings-showing')) {
+                hideNode($(nodeElement));
+            } else {
+                showNode($(nodeElement));
+            }
+        }
+
         if (geomNode.editing) {
             $('#modal-ok').click(function() {
                 if (geomNode.editing) {
@@ -113,6 +135,8 @@ function TreeView() {
                     geom_doc.remove(geomNode);
                 }
             });
+        } else {
+            hideNode($('#' + idForGeomNode(geomNode) + ' .show-hide-siblings'));
         }
 
         // Add the transform ok/cancel event functions. There can be only a 
@@ -212,21 +236,13 @@ function TreeView() {
             command_stack.execute(cmd);
         });
 
+
+
         // Show/Hide
         $('#' + idForGeomNode(geomNode) + ' .show-hide-siblings').click(function() {
-                if ($(this).hasClass('siblings-showing')) {
-                    $(this).attr('src', '/images/arrow_hidden.png');
-                    $(this).removeClass('siblings-showing');
-                    var otherRows = $(this).parent().parent().siblings();
-                    otherRows.hide();
-                } else {
-                    $(this).attr('src', '/images/arrow_showing.png');
-                    $(this).addClass('siblings-showing');
-                    var otherRows = $(this).parent().parent().siblings();
-                otherRows.show();
-                }
-                return false;
-            });
+            toggleShowHide(this);
+            return false;
+        });
         
     }
 
