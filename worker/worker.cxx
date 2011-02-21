@@ -230,15 +230,48 @@ TopoDS_Shape copy_mirror(map<string, mValue> transform, TopoDS_Shape shape) {
     return result;
 }
 
-TopoDS_Shape copy_translate(map<string, mValue> transform, TopoDS_Shape shape) {
-    map< string, mValue > parameters = transform["parameters"].get_obj();
+gp_Trsf translateTransformation(double multiplier, map< string, mValue > parameters) {
     mValue dx = parameters["dx"];
     mValue dy = parameters["dy"];
     mValue dz = parameters["dz"];
+    
+    gp_Trsf transformation = gp_Trsf();
+    transformation.SetTranslation(gp_Vec(multiplier*get_double(dx), 
+                                         multiplier*get_double(dy), 
+                                         multiplier*get_double(dz)));
+    return transformation;
+}
+
+gp_Trsf rotateTransformation(double multiplier, map< string, mValue > parameters) {
+    mValue px = parameters["px"];
+    mValue py = parameters["py"];
+    mValue pz = parameters["pz"];
+    mValue vx = parameters["vx"];
+    mValue vy = parameters["vy"];
+    mValue vz = parameters["vz"];
+    mValue angle = parameters["angle"];
+    
+    gp_Trsf transformation = gp_Trsf();
+    transformation.SetRotation(gp_Ax1(gp_Pnt(get_double(px),
+                                             get_double(py),
+                                             get_double(pz)), 
+                                      gp_Dir(get_double(vx),
+                                             get_double(vy),
+                                             get_double(vz))), 
+                               multiplier*get_double(angle)/180*M_PI);
+    
+    return transformation;
+}
+    
+
+TopoDS_Shape copy_transform(TopoDS_Shape shape, 
+                            gp_Trsf (*transformFn)(double, map< string, mValue >), 
+                            map< string, mValue > parameters) {
     int n = parameters["n"].get_int();
     
     TopoDS_Shape copies[n + 1]; // worst case memory requirement
     copies[0] = shape;
+    
     
     int remaining = n;
     int grouping = 1;
@@ -250,11 +283,7 @@ TopoDS_Shape copy_translate(map<string, mValue> transform, TopoDS_Shape shape) {
         int group_index = (int)(log(grouping)/log(2));
         TopoDS_Shape obj_to_copy = copies[group_index];
         
-        gp_Trsf transformation = gp_Trsf();
-        transformation.SetTranslation(gp_Vec(multiplier*get_double(dx), 
-                                             multiplier*get_double(dy), 
-                                             multiplier*get_double(dz)));
-        
+        gp_Trsf transformation = transformFn(multiplier, parameters);
         BRepBuilderAPI_Transform brep_transform(obj_to_copy, transformation);
         copies[index] = BRepAlgoAPI_Fuse(brep_transform.Shape(),
                                          copies[index - 1]).Shape();
@@ -273,41 +302,18 @@ TopoDS_Shape copy_translate(map<string, mValue> transform, TopoDS_Shape shape) {
     return copies[index - 1];
 }
 
+TopoDS_Shape copy_translate(map<string, mValue> transform, TopoDS_Shape shape) {
+    map< string, mValue > parameters = transform["parameters"].get_obj();
+    
+    gp_Trsf (*transformFn)(double, map< string, mValue >) = &translateTransformation;
+    return copy_transform(shape, transformFn, parameters);
+}
+
 TopoDS_Shape copy_rotate(map<string, mValue> transform, TopoDS_Shape shape) {
     map< string, mValue > parameters = transform["parameters"].get_obj();
-    mValue px = parameters["px"];
-    mValue py = parameters["py"];
-    mValue pz = parameters["pz"];
-    mValue vx = parameters["vx"];
-    mValue vy = parameters["vy"];
-    mValue vz = parameters["vz"];
-    mValue angle = parameters["angle"];
-    int n = parameters["n"].get_int();
     
-    TopoDS_Shape copies[n + 1];
-    copies[0] = shape;
-    
-    for (int i = 1; i < n + 1; ++i) {
-        gp_Trsf transformation = gp_Trsf();
-        transformation.SetRotation(gp_Ax1(gp_Pnt(get_double(px),
-                                                 get_double(py),
-                                                 get_double(pz)), 
-                                          gp_Dir(get_double(vx),
-                                                 get_double(vy),
-                                                 get_double(vz))), 
-                                   get_double(angle)/180*M_PI);
-        
-        BRepBuilderAPI_Transform brep_transform(copies[i -1], transformation);
-        copies[i] = brep_transform.Shape();
-    }
-    
-    TopoDS_Shape result = copies[0];
-    for (int i = 1; i < n + 1; ++i) {
-        result = BRepAlgoAPI_Fuse(result,
-                                  copies[i]).Shape();
-    }
-    
-    return result;
+    gp_Trsf (*transformFn)(double, map< string, mValue >) = &rotateTransformation;
+    return copy_transform(shape, transformFn, parameters);
 }
 
 
