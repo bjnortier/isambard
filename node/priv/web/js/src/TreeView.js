@@ -135,7 +135,17 @@ function TreeView() {
                     geom_doc.remove(geomNode);
                 }
             });
-        } else {
+        } 
+
+        // If neither the geomnode nor any of it's transforms are in editing, hide
+        var anyTransformsEditing = false;
+        for (var i in geomNode.transforms) {
+            if (geomNode.transforms[i].editing) {
+                anyTransformsEditing = true;
+                break;
+            }
+        }
+        if (!(geomNode.editing || anyTransformsEditing)) {
             hideNode($('#' + idForGeomNode(geomNode) + ' .show-hide-siblings'));
         }
 
