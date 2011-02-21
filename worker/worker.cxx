@@ -237,24 +237,40 @@ TopoDS_Shape copy_translate(map<string, mValue> transform, TopoDS_Shape shape) {
     mValue dz = parameters["dz"];
     int n = parameters["n"].get_int();
     
-    TopoDS_Shape copies[n + 1];
+    TopoDS_Shape copies[n + 1]; // worst case memory requirement
     copies[0] = shape;
     
-    for (int i = 1; i < n + 1; ++i) {
+    int remaining = n;
+    int grouping = 1;
+    float multiplier = 1.0;
+    int index = 1;
+    
+    while (remaining > 0) {
+        
+        int group_index = (int)(log(grouping)/log(2));
+        TopoDS_Shape obj_to_copy = copies[group_index];
+        
         gp_Trsf transformation = gp_Trsf();
-        transformation.SetTranslation(gp_Vec(get_double(dx), get_double(dy), get_double(dz)));
-
-        BRepBuilderAPI_Transform brep_transform(copies[i -1], transformation);
-        copies[i] = brep_transform.Shape();
+        transformation.SetTranslation(gp_Vec(multiplier*get_double(dx), 
+                                             multiplier*get_double(dy), 
+                                             multiplier*get_double(dz)));
+        
+        BRepBuilderAPI_Transform brep_transform(obj_to_copy, transformation);
+        copies[index] = BRepAlgoAPI_Fuse(brep_transform.Shape(),
+                                         copies[index - 1]).Shape();
+        
+        multiplier = multiplier + grouping;
+        remaining = remaining - grouping;
+        ++index;
+        
+        if ((grouping * 2) < remaining) {
+            grouping = grouping * 2;
+        } else if (grouping > remaining) {
+            grouping = grouping / 2;
+        }
     }
     
-    TopoDS_Shape result = copies[0];
-    for (int i = 1; i < n + 1; ++i) {
-        result = BRepAlgoAPI_Fuse(result,
-                                  copies[i]).Shape();
-    }
-    
-    return result;
+    return copies[index - 1];
 }
 
 TopoDS_Shape copy_rotate(map<string, mValue> transform, TopoDS_Shape shape) {
