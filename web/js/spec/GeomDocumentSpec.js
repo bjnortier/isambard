@@ -95,7 +95,7 @@ describe('GeomDocument', function() {
                     { type : 'cuboid', children : [], transforms : [] } ],
                   transforms : [] } ], 
               transforms : [] }
-        });
-       
+        ]);
+    });
 
 });

@@ -35,3 +35,21 @@ selectionManager.addListener(function(event) {
         });
     }
 });
+
+$(document).ready(function() {
+    var docId = $.getQueryParam("docid");
+    if (docId == undefined) {
+        alert('no document defined!');
+        return;
+    }
+    // Retrieve the serialised document
+    $.ajax({
+        type: 'GET',
+        url: '/doc/' + docId,
+        dataType: 'json',
+        success: function(docJSON) {
+            console.log(docJSON);
+        }
+    });
+
+});
