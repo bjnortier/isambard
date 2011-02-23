@@ -77,6 +77,25 @@ describe('GeomDocument', function() {
             doc.ancestors(new GeomNode({type: 'cuboid'}));
         }).toThrow("node not found");
     });
+
+    it('can be serialised to json', function() {
+
+        var child = new GeomNode({type: 'cuboid', path: '/3'});
+        var parent = new GeomNode({type: 'boolean', path: '/2'}, [child]);
+        var grandparent = new GeomNode({type: 'boolean', path: '/1'}, [parent]);
+        var another = new GeomNode({type: 'sphere', path: '/4'});
+        doc.add(grandparent);
+        doc.add(another);
+
+        var serialized = doc.toJson();
+        expect(serialized).toEqual([
+            { type : 'sphere', children : [], transforms : [] }, 
+            { type : 'boolean', children : [ 
+                { type : 'boolean', children : [ 
+                    { type : 'cuboid', children : [], transforms : [] } ],
+                  transforms : [] } ], 
+              transforms : [] }
+        });
        
 
 });

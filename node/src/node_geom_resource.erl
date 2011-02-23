@@ -27,7 +27,7 @@ resource_exists(ReqData, Context) ->
         'POST' ->
             {true, ReqData, Context};
         _ ->
-            Exists = node_document_db:exists(Context#context.id),
+            Exists = node_geom_db:exists(Context#context.id),
             {Exists, ReqData, Context}
     end.
 
@@ -36,7 +36,7 @@ content_types_provided(ReqData, Context) ->
 
 provide_content(ReqData, Context) ->
     Id = Context#context.id,
-    case node_document_db:geometry(Id) of
+    case node_geom_db:geometry(Id) of
         undefined ->
             {"not found", ReqData, Context};
         Tesselation ->
@@ -56,7 +56,7 @@ create_path(ReqData, Context) ->
 accept_content(ReqData, Context) ->
     case wrq:method(ReqData) of
         'POST' ->
-            Id = node_document_db:create(Context#context.json_obj),
+            Id = node_geom_db:create(Context#context.json_obj),
             Path = io_lib:format("/geom/~s", [Id]),
             io:format("created geometry: ~s~n", [Path]),
             ReqData1 = wrq:set_resp_body(
@@ -64,12 +64,15 @@ accept_content(ReqData, Context) ->
             {true, ReqData1, Context};
         'PUT' ->
             Id = Context#context.id,
-            Id = node_document_db:update(Context#context.id, Context#context.json_obj),
-            Path = io_lib:format("/geom/~s", [Id]),
-            io:format("updated geometry: ~s~n", [Path]),
-            ReqData1 = wrq:set_resp_body(
-                         mochijson2:encode({struct, [{<<"path">>, iolist_to_binary(Path)}]}), ReqData),
-            {true, ReqData1, Context}
+            case node_geom_db:update(Context#context.id, Context#context.json_obj) of
+                ok ->
+                    Path = io_lib:format("/geom/~s", [Id]),
+                    io:format("updated geometry: ~s~n", [Path]),
+                    {true, ReqData, Context};
+                {error, Error} ->
+                    io:format("ERR: ~p~n", [Error]),
+                    {false, ReqData, Context}
+            end
     end.
 
 

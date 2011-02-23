@@ -9,31 +9,60 @@ describe("GeomNode", function() {
             new GeomNode({});
         }).toThrow("type is not defined");
 
-        var node = new GeomNode({type: "cuboid", parameters: {width: 1, depth: 1, height: 1}});
+        var node = new GeomNode({type: "cuboid"});
         expect(node.type).toEqual("cuboid");
 
-        expect(node.json).toBeDefined();
-        expect(JSON.parse(node.json())).toMatch({type: "cuboid"});
+        expect(node.toShallowJson).toBeDefined();
+        expect(JSON.parse(node.toShallowJson())).toEqual({type: "cuboid", 
+                                                          children: [],
+                                                          transforms: []});
     });
 
     it("can have empty parameters", function() {
 
         var node = new GeomNode({type: "union"});
         expect(node.type).toEqual("union");
-        expect(JSON.parse(node.json())).toMatch({type: "union"});
+        expect(JSON.parse(node.toShallowJson())).toEqual({type: "union",
+                                                          children: [],
+                                                          transforms: []});
+
+        expect(JSON.parse(node.toDeepJson())).toEqual({type: "union",
+                                                          children: [],
+                                                          transforms: []});
     });
 
     it("can have children", function() {
         
-        var child1 = new GeomNode({type: "sphere"});
-        var child2 = new GeomNode({type: "cuboid"});
-        var parentNode = new GeomNode({type: "union"}, [child1, child2]);
+        var child1 = new GeomNode({type: "sphere", path: '/1'});
+        var child2 = new GeomNode({type: "cuboid", path: '/2'});
+        var parentNode = new GeomNode({type: "union", path: '/3'}, [child1, child2]);
 
         expect(parentNode.children.length).toEqual(2);
         expect(parentNode.children[0]).toEqual(child1);
         expect(parentNode.children[1]).toEqual(child2);
 
+        console.log(parentNode.toShallowJson());
+        expect(JSON.parse(parentNode.toShallowJson())).toEqual(
+            {type: "union",
+             children: ['/1', '/2'],
+             transforms: []});
+        
+        expect(JSON.parse(parentNode.toDeepJson())).toEqual(
+            {type: "union",
+             children: [
+                 {type: 'sphere',
+                  children: [],
+                  transforms: []},
+                 {type: 'cuboid',
+                  children: [],
+                  transforms: []}
+             ],
+             transforms: []});
+
+
     });
+
+    
 
 
 

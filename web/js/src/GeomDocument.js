@@ -95,5 +95,12 @@ function GeomDocument() {
         throw Error("node not found");
     }
 
+    this.toJson = function() {
+
+        return this.rootNodes.map(function(x) {
+            return JSON.parse(x.toDeepJson());
+        });
+    }
+
     Observable.makeObservable(this);
 }

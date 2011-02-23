@@ -13,5 +13,5 @@
                   webmachine
                  ]},
   {mod, { node_app, []}},
-  {env, []}
+  {env, [{db_dir, "../db"}]}
  ]}.

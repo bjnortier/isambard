@@ -28,9 +28,9 @@ file_path(_Context, []) ->
     false;
 file_path(Context, Name) ->
     RelName = case hd(Name) of
-        "/" -> tl(Name);
-        _ -> Name
-    end,
+                  $/ -> tl(Name);
+                  _ -> Name
+              end,
     filename:join([Context#context.root, RelName]).
 
 file_exists(Context, Name) ->
@@ -43,7 +43,7 @@ file_exists(Context, Name) ->
     end.
 
 resource_exists(ReqData, Context) ->
-    Path = wrq:disp_path(ReqData),
+    Path = wrq:path(ReqData),
     case file_exists(Context, Path) of 
         {true, _} ->
             {true, ReqData, Context};
@@ -70,13 +70,13 @@ maybe_fetch_object(Context, Path) ->
     end.
 
 content_types_provided(ReqData, Context) ->
-    CT = webmachine_util:guess_mime(wrq:disp_path(ReqData)),
+    CT = webmachine_util:guess_mime(wrq:path(ReqData)),
     {[{CT, provide_content}], ReqData,
      Context#context{metadata=[{'content-type', CT}|Context#context.metadata]}}.
 
 
 provide_content(ReqData, Context) ->
-    case maybe_fetch_object(Context, wrq:disp_path(ReqData)) of 
+    case maybe_fetch_object(Context, wrq:path(ReqData)) of 
         {true, NewContext} ->
             Body = NewContext#context.response_body,
             {Body, ReqData, Context};
@@ -86,7 +86,7 @@ provide_content(ReqData, Context) ->
 
 last_modified(ReqData, Context) ->
     {true, FullPath} = file_exists(Context,
-                                   wrq:disp_path(ReqData)),
+                                   wrq:path(ReqData)),
     LMod = filelib:last_modified(FullPath),
     {LMod, ReqData, Context#context{metadata=[{'last-modified',
                     httpd_util:rfc1123_date(LMod)}|Context#context.metadata]}}.
@@ -94,7 +94,7 @@ last_modified(ReqData, Context) ->
 hash_body(Body) -> mochihex:to_hex(binary_to_list(crypto:sha(Body))).
 
 generate_etag(ReqData, Context) ->
-    case maybe_fetch_object(Context, wrq:disp_path(ReqData)) of
+    case maybe_fetch_object(Context, wrq:path(ReqData)) of
         {true, BodyContext} ->
             ETag = hash_body(BodyContext#context.response_body),
             {ETag, ReqData,

@@ -19,7 +19,7 @@ allowed_methods(ReqData, Context) ->
 
 resource_exists(ReqData, Context) ->
     Id = wrq:path_info(id, ReqData),
-    Exists = node_document_db:exists(Id),
+    Exists = node_geom_db:exists(Id),
     {Exists, ReqData, Context#context{id = Id}}.
 
 content_types_provided(ReqData, Context) ->
@@ -27,6 +27,6 @@ content_types_provided(ReqData, Context) ->
 
 provide_content(ReqData, Context) ->
     Id = Context#context.id,
-    Tesselation =  node_document_db:tesselation(Id),
+    Tesselation =  node_geom_db:tesselation(Id),
     {Tesselation, ReqData, Context}.
 

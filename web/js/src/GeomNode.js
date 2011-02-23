@@ -70,13 +70,28 @@ GeomNode.prototype.editableCopy = function() {
 // TODO: Move test for multiple prorotype transforms from doc
 // into this class
     
-GeomNode.prototype.json = function() {
+GeomNode.prototype.toShallowJson = function() {
     // No need to do somethign special with parameters if they are not 
     // defined, as JSON.stringigy simply ignores those fields
     return JSON.stringify({type: this.type,
                            parameters: this.parameters,
                            children: this.children.map(function(child) {
                                return child.path;
+                           }),
+                           transforms: this.transforms.map(function(tx) {
+                               return JSON.parse(tx.json());
+                           })});
+}
+
+
+// TODO: Double json create/parse occurring here
+GeomNode.prototype.toDeepJson = function() {
+    // No need to do somethign special with parameters if they are not 
+    // defined, as JSON.stringify simply ignores those fields
+    return JSON.stringify({type: this.type,
+                           parameters: this.parameters,
+                           children: this.children.map(function(child) {
+                               return JSON.parse(child.toDeepJson());
                            }),
                            transforms: this.transforms.map(function(tx) {
                                return JSON.parse(tx.json());
