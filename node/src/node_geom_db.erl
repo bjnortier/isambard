@@ -1,4 +1,4 @@
--module(node_document_db).
+-module(node_geom_db).
 -behaviour(gen_server).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -export([start_link/0, stop/0]).
@@ -53,7 +53,7 @@ handle_call({raw_geom_record, Id}, _From, State) ->
 handle_call({create, Geometry}, _From, State) ->
     {struct, GeomProps} = Geometry,
     {<<"type">>, GeomType} = lists:keyfind(<<"type">>, 1, GeomProps),
-    Id = uuid(),
+    Id = node_uuid:uuid(),
     Reply = case create_type(Id, GeomType, Geometry) of
                 "\"ok\"" ->
                     Id;
@@ -66,7 +66,7 @@ handle_call({update, Id, Geometry}, _From, State) ->
     {<<"type">>, GeomType} = lists:keyfind(<<"type">>, 1, GeomProps),
     Reply = case create_type(Id, GeomType, Geometry) of
                 "\"ok\"" ->
-            Id;
+                    ok;
                 Error ->
                     {error, Error}
             end,
@@ -126,18 +126,6 @@ code_change(_OldVsn, State, _Extra) ->
 %%%                                 private                                  %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
-to_digit(N) when N < 10 -> $0 + N;
-to_digit(N)             -> $a + N-10.
-
-to_hex([]) ->
-    [];
-to_hex(Bin) when is_binary(Bin) ->
-    to_hex(binary_to_list(Bin));
-to_hex([H|T]) ->
-    [to_digit(H div 16), to_digit(H rem 16) | to_hex(T)].
-
-uuid() ->
-    to_hex(crypto:rand_bytes(16)).
 
 create_type(Id, <<"union">>, Geometry) ->
     create_boolean(Id, <<"union">>, Geometry);
@@ -167,6 +155,11 @@ create_boolean(Id, Type, Geometry) ->
                                 {<<"transforms">>, Transforms}
                                ]}).
 worker_create(Id, Geometry) ->
+    {ok, DbDir} = application:get_env(node, db_dir),
+    Filename = io_lib:format("~s/~s.geom", [DbDir, Id]),
+    io:format("writing ~p to ~p~n", [Id, Filename]),
+    ok = file:write_file(Filename, term_to_binary(Geometry)),
+
     Msg = {struct, [{<<"type">>, <<"create">>},
                     {<<"id">>, list_to_binary(Id)},
                     {<<"geometry">>, Geometry}
