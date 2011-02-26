@@ -35,6 +35,11 @@
 #include <Poly_Connect.hxx>
 #include <StdPrs_ToolShadedShape.hxx>
 
+#include <FSD_BinaryFile.hxx>
+#include <Storage_Data.hxx>
+#include <ShapeSchema.hxx>
+#include <PTColStd_TransientPersistentMap.hxx>
+#include <MgtBRep.hxx>
 
 
 // Spirit
@@ -42,6 +47,7 @@
 
 // Project
 #include "WorkerConfig.h"
+#include "base64.h"
 
 using namespace std;
 using namespace json_spirit;
@@ -598,14 +604,14 @@ int write_cmd(const char *buf, int len) {
 int main (int argc, char *argv[]) {
     
     unsigned char buf[1024*1024];
-    int json_size;
+    int msg_size;
     
-    while ((json_size = read_cmd(buf)) > 0) {
+    while ((msg_size = read_cmd(buf)) > 0) {
         
         try {
             mValue value;
             // Set 0-delimiter for conversion to string
-            buf[json_size] = 0;
+            buf[msg_size] = 0;
             string json_string = string((char*)buf);
             read(json_string, value);
             
@@ -653,6 +659,44 @@ int main (int argc, char *argv[]) {
                     mValue response = mValue("ok");
                     string output = write(response);
                     write_cmd(output.c_str(), output.size());
+                    continue;
+                }
+                
+                if (!msgType.is_null() && (msgType.type() == str_type) && (msgType.get_str() == string("serialize"))
+                    &&
+                    !id.is_null() && (id.type() == str_type)) {
+                    
+                    TopoDS_Shape shape = shapes[id.get_str()];
+                    
+                    char fileName[50];
+                    sprintf(fileName, "/tmp/%s.bin", id.get_str().c_str());
+                    
+                    // Write to temporary file
+                    FSD_BinaryFile f;
+                    f.Open(fileName, Storage_VSWrite);
+                    Handle(Storage_Data) d = new Storage_Data;
+                    
+                    PTColStd_TransientPersistentMap aMap;
+                    Handle(PTopoDS_HShape) aPShape = MgtBRep::Translate(shape, aMap, MgtBRep_WithoutTriangle);
+                    
+                    d->AddRoot("ObjectName", aPShape);
+                    Handle(ShapeSchema) s = new ShapeSchema;
+                    s->Write(f, d);
+                    f.Close();
+                    
+                    // Read from tmp
+                    int index = 0;
+                    char s11nBuf[1024*1024];
+                    
+                    ifstream tmpFile(fileName);
+                    while(!tmpFile.eof())
+                    {
+                        tmpFile.get(s11nBuf[index]);
+                        ++index;
+                    }
+                    tmpFile.close();
+                    
+                    write_cmd(s11nBuf, index - 1);
                     continue;
                 }
                 
