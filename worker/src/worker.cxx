@@ -47,7 +47,7 @@
 
 // Project
 #include "WorkerConfig.h"
-#include "base64.h"
+//#include "base64.h"
 
 using namespace std;
 using namespace json_spirit;
