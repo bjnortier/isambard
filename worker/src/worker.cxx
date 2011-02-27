@@ -40,6 +40,11 @@
 #include <ShapeSchema.hxx>
 #include <PTColStd_TransientPersistentMap.hxx>
 #include <MgtBRep.hxx>
+#include <Storage_HSeqOfRoot.hxx>
+#include <Storage_HSeqOfRoot.hxx>
+#include <Storage_Root.hxx>
+#include <PTColStd_PersistentTransientMap.hxx>
+
 
 
 // Spirit
@@ -47,7 +52,7 @@
 
 // Project
 #include "WorkerConfig.h"
-//#include "base64.h"
+#include "base64.h"
 
 using namespace std;
 using namespace json_spirit;
@@ -696,8 +701,63 @@ int main (int argc, char *argv[]) {
                     }
                     tmpFile.close();
                     
-                    write_cmd(s11nBuf, index - 1);
+                    // Base64
+                    std::string encoded = base64_encode(reinterpret_cast<const unsigned char*>(s11nBuf), index - 1);
+                    
+                    mObject result;
+                    result["s11n"] = encoded;
+                    string output = write(result);
+                    write_cmd(output.c_str(), output.size());
                     continue;
+                    
+                }
+                
+                mValue s11n = objMap["s11n"];
+                if (!msgType.is_null() && (msgType.type() == str_type) && (msgType.get_str() == string("deserialize"))
+                    &&
+                    !id.is_null() && (id.type() == str_type)
+                    &&
+                    !s11n.is_null() && (s11n.type() == str_type)) {
+                    
+                    // Temp filename
+                    char fileName[50];
+                    sprintf(fileName, "/tmp/%s.bin", id.get_str().c_str());
+
+                    // Decode base64
+                    std::string decoded = base64_decode(s11n.get_str());
+                    
+                    ofstream tmpFile;
+                    tmpFile.open (fileName);
+                    tmpFile << decoded;
+                    tmpFile.close();
+                    
+                    // Read from temp file
+
+                    FSD_BinaryFile f;
+                    f.Open(fileName, Storage_VSRead);
+
+                    Handle(ShapeSchema) s = new ShapeSchema;
+                    Handle(Storage_Data) d = s->Read( f );
+                    Handle(Storage_HSeqOfRoot)  roots = d->Roots();
+                    Handle(Storage_Root) r = d->Find("ObjectName");
+                        //= roots->Value(0);
+                    Handle(Standard_Persistent) p = r->Object();
+                    Handle(PTopoDS_HShape) aPShape  = Handle(PTopoDS_HShape)::DownCast(p);
+                    f.Close();
+
+                    
+                    // Create the shape
+                    PTColStd_PersistentTransientMap aMap;
+                    TopoDS_Shape resultingShape;
+                    MgtBRep::Translate(aPShape, aMap, resultingShape, MgtBRep_WithoutTriangle);
+                    
+                    shapes[id.get_str()] = resultingShape;
+                    
+                    mValue response = mValue("ok");
+                    string output = write(response);
+                    write_cmd(output.c_str(), output.size());                    
+                    continue;
+                    
                 }
                 
             }

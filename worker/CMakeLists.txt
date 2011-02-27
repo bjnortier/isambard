@@ -15,9 +15,12 @@ configure_file (
 # add the binary tree to the search path for include files
 # so that we will find TutorialConfig.h
 include_directories("${PROJECT_BINARY_DIR}")
+include_directories("include")
+include_directories("/usr/local/include")
+
  
 # add the executable
-add_executable(worker worker.cxx)
+add_executable(worker src/worker.cxx src/base64.cpp)
 
 include_directories ("/Library/OpenCASCADE/6.3.0/inc")
 

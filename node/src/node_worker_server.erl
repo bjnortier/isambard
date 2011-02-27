@@ -45,6 +45,7 @@ handle_call(stop, _From, State) ->
     Reply = stopped,
     {stop, Reason, Reply, State};
 handle_call({call, Msg}, _From, State) ->
+    io:format("MSG: ~p~n", [Msg]),
     Port = State#state.port,
     Port ! {self(), {command, Msg}},
     receive
