@@ -29,11 +29,14 @@ content_types_provided(ReqData, Context) ->
 
 provide_content(ReqData, Context) ->
     Id = Context#context.id,
-    case node_document_db:doc(Id) of
+    case node_document_db:load(Id) of
         undefined ->
             {"{\"error\" : \"not found\"", ReqData, Context};
-        Doc ->
-            {mochijson2:encode(Doc), ReqData, Context}
+        GeomIds ->
+            F = fun(GeomId) ->
+                        list_to_binary("/geom/" ++ GeomId)
+                end,
+            {mochijson2:encode(lists:map(F, GeomIds)), ReqData, Context}
     end.
 
 content_types_accepted(ReqData, Context) ->
@@ -41,7 +44,12 @@ content_types_accepted(ReqData, Context) ->
 
 accept_content(ReqData, Context) ->
     Id = Context#context.id,
-    case node_document_db:update(Context#context.id, Context#context.json_obj) of
+    GeomIds = lists:map(fun(Path) ->
+                                "/geom/" ++ GeomId = binary_to_list(Path),
+                                GeomId
+                        end,
+                        Context#context.json_obj),
+    case node_document_db:update(Context#context.id, GeomIds) of
         ok ->
             Path = io_lib:format("/doc/~s", [Id]),
             io:format("updated doc: ~s~n", [Path]),

@@ -5,10 +5,9 @@
 	 content_types_provided/2,
 	 provide_content/2,
 	 post_is_create/2,
-         content_types_accepted/2,
-         accept_content/2,
-	 create_path/2,
-	 resource_exists/2
+         process_post/2,
+	 resource_exists/2,
+         malformed_request/2
         ]).
 
 
@@ -25,8 +24,9 @@ resource_exists(ReqData, Context) ->
     case wrq:method(ReqData) of
         'POST' ->
             {true, ReqData, Context};
-        _ ->
-            {true, ReqData, Context}
+        'GET' ->
+            Exists = node_document_db:exists(Context#context.id),
+            {Exists, ReqData, Context}
     end.
 
 content_types_provided(ReqData, Context) ->
@@ -37,19 +37,25 @@ provide_content(ReqData, Context) ->
     JSON = lists:map(fun list_to_binary/1, DocIds),
     {mochijson2:encode(JSON), ReqData, Context}.
 
+
 post_is_create(ReqData, Context) ->
-    {true, ReqData, Context}.
+    {false, ReqData, Context}.
 
-create_path(ReqData, Context) ->
+process_post(ReqData, Context) ->
     Id = node_document_db:create(),
-    {"/doc/" ++ Id, ReqData, Context#context{id = Id}}. 
-
-content_types_accepted(ReqData, Context) ->
-    {[{"application/json", accept_content}], ReqData, Context}.
-
-accept_content(ReqData, Context) ->
-    ReqData1 = wrq:set_resp_body("{\"path\": \"/doc/" ++ Context#context.id ++ "\"}", ReqData),
+    ReqData1 = wrq:set_resp_body("{\"path\": \"/doc/" ++ Id ++ "\"}", ReqData),
     {true, ReqData1, Context}.
 
+malformed_request(ReqData, Context) ->
+    Method = wrq:method(ReqData),
+    malformed_request(ReqData, Context, Method).
 
-
+malformed_request(ReqData, Context, 'GET') ->
+    case wrq:path_info(id, ReqData) of
+        undefined ->
+            {true, wrq:set_resp_body("missing id: /doc/<id>", ReqData), Context};
+        Id when is_list(Id) ->
+            {false, ReqData, Context#context{id = Id}}
+    end;
+malformed_request(ReqData, Context, 'POST') ->
+    {false, ReqData, Context}.

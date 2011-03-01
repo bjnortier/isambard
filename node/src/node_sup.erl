@@ -45,9 +45,10 @@ init([]) ->
     {ok, Dispatch} = file:consult(filename:join(
                          [filename:dirname(code:which(?MODULE)),
                           "..", "priv", "dispatch.conf"])),
+    {ok, Port} = application:get_env(node, port),
     WebConfig = [
                  {ip, Ip},
-                 {port, 8000},
+                 {port, Port},
                  {log_dir, "priv/log"},
                  {dispatch, Dispatch}],
     Web = {webmachine_mochiweb,

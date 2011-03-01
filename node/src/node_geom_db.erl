@@ -3,6 +3,8 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -export([start_link/0, stop/0]).
 -export([exists/1, raw_geom_record/1, create/1, update/2, geometry/1, tesselation/1, stl/1]).
+-export([serialize/1, deserialize/1]).
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                              Public API                                  %%%
@@ -27,6 +29,11 @@ tesselation(Id) ->
     gen_server:call(?MODULE, {tesselation, Id}, 30000).
 stl(Id) ->
     gen_server:call(?MODULE, {stl, Id}, 30000).
+serialize(Id) ->
+    gen_server:call(?MODULE, {serialize, Id}, 30000).
+deserialize(Id) ->
+    gen_server:call(?MODULE, {deserialize, Id}, 30000).
+
     
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -105,6 +112,39 @@ handle_call({stl, Id}, _From, State) ->
     "\"ok\"" = node_worker_server:call(mochijson2:encode(Msg)),
     {ok, STL} = file:read_file(Filename),
     {reply, STL, State};
+handle_call({serialize, Id}, _From, State) ->
+    Msg = {struct, [{<<"type">>, <<"serialize">>},
+                    {<<"id">>, list_to_binary(Id)}]},
+    {struct, [{<<"s11n">>, S11N}]} = mochijson2:decode(node_worker_server:call(mochijson2:encode(Msg))),
+
+    {Id, Record} = lists:keyfind(Id, 1, State),
+    GeomFilename = filename(Id),
+    Geometry = Record#geom_doc.geometry,
+    ToWrite = [{geom, Geometry},
+               {s11n, S11N}],
+    io:format("writing geometry for ~p to ~s~n", [Id, GeomFilename]),
+    ok = file:write_file(GeomFilename, term_to_binary(ToWrite)),
+    {reply, ok, State};
+handle_call({deserialize, Id}, _From, State) ->
+    GeomFilename = filename(Id),
+    {ok, Contents} = file:read_file(GeomFilename),
+    Props = binary_to_term(Contents),
+    {geom, Geometry} = lists:keyfind(geom, 1, Props),
+    {s11n, S11N} = lists:keyfind(s11n, 1, Props),
+    
+    %% Insert into worker
+    Msg = {struct, [{<<"type">>, <<"deserialize">>},
+                    {<<"id">>, list_to_binary(Id)},
+                    {<<"s11n">>, S11N}]},
+    "\"ok\"" = node_worker_server:call(mochijson2:encode(Msg)),
+    
+    NewState = case lists:keyfind(Id, 1, State) of
+                   {_, _} ->
+                       lists:keyreplace(Id, 1, State, {Id, #geom_doc{ geometry = Geometry }});
+                   false ->
+                       [{Id, #geom_doc{ geometry = Geometry }} | State]
+               end,
+    {reply, ok, NewState};
 handle_call(stop, _From, State) ->
     {stop, normal, stopped, State};
 handle_call(_Request, _From, State) ->
@@ -126,6 +166,11 @@ code_change(_OldVsn, State, _Extra) ->
 %%%                                 private                                  %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
+filename(Id) ->
+    {ok, DbDir} = application:get_env(node, db_dir),
+    filename:join(
+      [filename:dirname(code:which(?MODULE)),
+       DbDir, Id ++ ".geom"]).
 
 create_type(Id, <<"union">>, Geometry) ->
     create_boolean(Id, <<"union">>, Geometry);
@@ -155,10 +200,6 @@ create_boolean(Id, Type, Geometry) ->
                                 {<<"transforms">>, Transforms}
                                ]}).
 worker_create(Id, Geometry) ->
-    {ok, DbDir} = application:get_env(node, db_dir),
-    Filename = io_lib:format("~s/~s.geom", [DbDir, Id]),
-    io:format("writing ~p to ~p~n", [Id, Filename]),
-    ok = file:write_file(Filename, term_to_binary(Geometry)),
 
     Msg = {struct, [{<<"type">>, <<"create">>},
                     {<<"id">>, list_to_binary(Id)},

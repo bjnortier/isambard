@@ -35,9 +35,11 @@ call(_Msg) ->
 -record(state, {port}).
 
 init([]) ->
-    ExtPrg = "../worker/xcode/Debug/worker",
+    WorkerBin = filename:join(
+                  [filename:dirname(code:which(?MODULE)),
+                   "..", "..", "worker", "xcode", "Debug", "worker"]),
     process_flag(trap_exit, true),
-    Port = open_port({spawn_executable, ExtPrg}, [{packet, 4}]),
+    Port = open_port({spawn_executable, WorkerBin}, [{packet, 4}]),
     {ok, #state{port = Port}}.
 
 handle_call(stop, _From, State) ->
@@ -45,7 +47,7 @@ handle_call(stop, _From, State) ->
     Reply = stopped,
     {stop, Reason, Reply, State};
 handle_call({call, Msg}, _From, State) ->
-    io:format("MSG: ~p~n", [Msg]),
+    %%io:format("MSG: ~p~n", [Msg]),
     Port = State#state.port,
     Port ! {self(), {command, Msg}},
     receive

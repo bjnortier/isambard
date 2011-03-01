@@ -74,6 +74,8 @@ $(document).ready(function() {
     /*
      * Basic
      */
+    new Action("save", "images/save.png", 
+               function(parameters) { save(); }).render($("#edit"));
     new Action("delete", "images/trash.png", 
                function(parameters) { delete_geom(); }).render($("#edit"));
     new Action("undo", "images/undo.png", 

@@ -33,7 +33,7 @@ describe("GeomNode", function() {
 
     it("can have children", function() {
         
-        var child1 = new GeomNode({type: "sphere", path: '/1'});
+        var child1 = new GeomNode({type: "sphere", path: '/1', parameters: {x: 1.0}});
         var child2 = new GeomNode({type: "cuboid", path: '/2'});
         var parentNode = new GeomNode({type: "union", path: '/3'}, [child1, child2]);
 
@@ -41,7 +41,6 @@ describe("GeomNode", function() {
         expect(parentNode.children[0]).toEqual(child1);
         expect(parentNode.children[1]).toEqual(child2);
 
-        console.log(parentNode.toShallowJson());
         expect(JSON.parse(parentNode.toShallowJson())).toEqual(
             {type: "union",
              children: ['/1', '/2'],
@@ -52,7 +51,8 @@ describe("GeomNode", function() {
              children: [
                  {type: 'sphere',
                   children: [],
-                  transforms: []},
+                  transforms: [],
+                  parameters: {x: 1.0}},
                  {type: 'cuboid',
                   children: [],
                   transforms: []}
