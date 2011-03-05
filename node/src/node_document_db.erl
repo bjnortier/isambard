@@ -88,7 +88,8 @@ load_from_file(DocId) ->
     {ok, Contents} = file:read_file(filename(DocId)),
     GeomIds = binary_to_term(Contents),
     lists:map(fun(GeomId) ->
-                      node_geom_db:deserialize(GeomId)
+                      node_geom_db:deserialize(GeomId),
+                      load_with_children(GeomId, node_geom_db:geometry(GeomId))
               end,
               GeomIds),
     node_log:info("loaded geomIds: ~p~n", [GeomIds]),
@@ -98,7 +99,40 @@ save_to_file(DocId, GeomIds) ->
     ok = file:write_file(filename(DocId), term_to_binary(GeomIds)),
     node_log:info("serializing geom ids: ~p~n", [GeomIds]),
     lists:map(fun(GeomId) ->
-                      S11N = node_geom_db:serialize(GeomId)
+                      save_with_children(GeomId, node_geom_db:geometry(GeomId))
               end,
               GeomIds),
     ok.
+
+load_with_children(GeomId, {struct, Props}) ->
+    case lists:keyfind(<<"children">>, 1, Props) of
+        {<<"children">>, ChildIds} ->
+            lists:map(fun(ChildIdBin) ->
+                              ChildId = binary_to_list(ChildIdBin),
+                              node_geom_db:deserialize(ChildId),
+                              ChildGeometry = node_geom_db:geometry(ChildId),
+                              node_log:info("Loading child geometry: ~n~p~n", [ChildGeometry]),
+                              load_with_children(ChildId, ChildGeometry)
+                      end,
+                      ChildIds);
+        false ->
+            ok
+    end.
+    
+
+save_with_children(GeomId, {struct, Props}) ->
+    case lists:keyfind(<<"children">>, 1, Props) of
+        {<<"children">>, ChildIds} ->
+            lists:map(fun(ChildIdBin) ->
+                              ChildId = binary_to_list(ChildIdBin),
+                              ChildGeometry = node_geom_db:geometry(ChildId),
+                              node_log:info("Saving child geometry: ~n~p~n", [ChildGeometry]),
+                              save_with_children(ChildId, ChildGeometry)
+                      end,
+                      ChildIds);
+        false ->
+            ok
+    end,
+    ok = node_geom_db:serialize(GeomId).
+
+            

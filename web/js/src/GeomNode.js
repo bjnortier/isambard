@@ -97,3 +97,14 @@ GeomNode.prototype.toDeepJson = function() {
                                return JSON.parse(tx.json());
                            })});
 }
+
+GeomNode.fromDeepJson = function(json) {
+    // Recursively create nodes if the children are json
+    var geomNode = new GeomNode(json);
+    if (json.children && (json.children.length > 0) && (typeof(json.children[0]) == "object")) {
+        geomNode.children = json.children.map(function(childJson) {
+            return GeomNode.fromDeepJson(childJson);
+        });
+    }
+    return geomNode;
+}

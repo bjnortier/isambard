@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -export([start_link/0, stop/0]).
--export([exists/1, raw_geom_record/1, create/1, update/2, geometry/1, tesselation/1, stl/1]).
+-export([exists/1, raw_geom_record/1, create/1, update/2, geometry/1, recursive_geometry/1, tesselation/1, stl/1]).
 -export([serialize/1, deserialize/1]).
 
 
@@ -17,23 +17,33 @@ stop() ->
 
 exists(Id) ->
     gen_server:call(?MODULE, {exists, Id}).
+
 raw_geom_record(Id) ->
     gen_server:call(?MODULE, {raw_geom_record, Id}).
+
 create(Geometry) ->
     gen_server:call(?MODULE, {create, Geometry}, 30000).
+
 update(Id, Geometry) ->
     gen_server:call(?MODULE, {update, Id, Geometry}, 30000).
+
 geometry(Id) ->
     gen_server:call(?MODULE, {geometry, Id}, 30000).
+
+recursive_geometry(Id) ->
+    gen_server:call(?MODULE, {recursive_geometry, Id}, 30000).
+
 tesselation(Id) ->
     gen_server:call(?MODULE, {tesselation, Id}, 30000).
+
 stl(Id) ->
     gen_server:call(?MODULE, {stl, Id}, 30000).
+
 serialize(Id) ->
     gen_server:call(?MODULE, {serialize, Id}, 30000).
+
 deserialize(Id) ->
     gen_server:call(?MODULE, {deserialize, Id}, 30000).
-
     
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -81,11 +91,17 @@ handle_call({update, Id, Geometry}, _From, State) ->
 handle_call({geometry, Id}, _From, State) ->
     Reply = case lists:keyfind(Id, 1, State) of
                 {Id, Record} -> 
-                    Record#geom_doc.geometry;
+                    {struct, GeomProps} = Record#geom_doc.geometry,
+                    {struct, [{<<"id">>, list_to_binary(Id)}|
+                              GeomProps]};
                 false -> 
                     undefined
             end,
     {reply, Reply, State};
+handle_call({recursive_geometry, Id}, _From, State) ->
+    Reply = recursive_geometry(Id, State),
+    {reply, Reply, State};
+
 handle_call({tesselation, Id}, _From, State) ->
     Reply = case lists:keyfind(Id, 1, State) of
                 {Id, Record} -> 
@@ -184,26 +200,38 @@ create_type(Id, _, Geometry) ->
 
 create_boolean(Id, Type, Geometry) ->
     {struct, GeomProps} = Geometry,
-    {<<"children">>, Children} = lists:keyfind(<<"children">>, 1, GeomProps),
-    Ids = lists:map(fun(Path) ->
-                           "/geom/" ++ ChildId = binary_to_list(Path),
-                           list_to_binary(ChildId)
-                   end,
-                   Children),
+    {<<"children">>, ChildIds} = lists:keyfind(<<"children">>, 1, GeomProps),
                    
     Transforms = case lists:keyfind(<<"transforms">>, 1, GeomProps) of
                      false -> [];
                      {<<"transforms">>, T} -> T
                  end,
     worker_create(Id, {struct, [{<<"type">>, Type},
-                                {<<"children">>, Ids},
+                                {<<"children">>, ChildIds},
                                 {<<"transforms">>, Transforms}
                                ]}).
 worker_create(Id, Geometry) ->
-
     Msg = {struct, [{<<"type">>, <<"create">>},
                     {<<"id">>, list_to_binary(Id)},
                     {<<"geometry">>, Geometry}
                    ]},
     node_worker_server:call(mochijson2:encode(Msg)).
 
+
+recursive_geometry(Id, State) ->           
+    {Id, Record} = lists:keyfind(Id, 1, State),
+    {struct, Props1} = Record#geom_doc.geometry,
+    Props2 = [{<<"id">>, list_to_binary(Id)}|
+              Props1],
+    case lists:keyfind(<<"children">>, 1, Props2) of
+        false ->
+            {struct, Props2};
+        {<<"children">>, ChildIds} ->
+            NewChildren = lists:map(fun(ChildIdBin) ->
+                                            recursive_geometry(binary_to_list(ChildIdBin), State)
+                                    end,
+                                    ChildIds),
+            Props3 = 
+                lists:keyreplace(<<"children">>, 1, Props2, {<<"children">>, NewChildren}),
+            {struct, Props3}
+    end.                                    

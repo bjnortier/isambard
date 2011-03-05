@@ -71,16 +71,15 @@ $(document).ready(function() {
                 console.log("loading " + path);
                 $.ajax({
                     type: 'GET',
-                    url: path,
+                    url: path + '?recursive=true',
                     dataType: 'json',
                     success: function(geomJson) {
-                        var newNode = new GeomNode(geomJson);
+                        var newNode = GeomNode.fromDeepJson(geomJson);
                         $.ajax({
                             type: 'GET',
                             url: '/tesselation/' + idForGeomPath(path),
                             success: function(tesselation) {
                                 newNode.tesselation = tesselation;
-                                newNode.path = path;
                                 geom_doc.add(newNode);
                             }
                         });

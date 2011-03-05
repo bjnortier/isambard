@@ -13,7 +13,7 @@ function update_geom_command(fromNode, toNode) {
                 type: 'PUT',
                 url: nextTo.path,
                 contentType: 'application/json',
-                data: nextTo.json(),
+                data: nextTo.toShallowJson(),
                 success: function(nodeData) {
                     if (nextTo.editing) {
                         nextTo.editing = false;
@@ -29,7 +29,7 @@ function update_geom_command(fromNode, toNode) {
                         // No more -> update the root node
                         $.ajax({
                             type: 'GET',
-                            url: '/tesselation/' + idForGeomPath(nodeData.path),
+                            url: '/tesselation/' + idForGeomPath(nextFrom.path),
                             success: function(tesselation) {
                                 nextTo.tesselation = tesselation;
                                 selectionManager.deselectAll();
