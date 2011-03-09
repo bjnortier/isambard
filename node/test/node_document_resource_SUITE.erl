@@ -1,4 +1,4 @@
--module(node_document_SUITE).
+-module(node_document_resource_SUITE).
 -compile(export_all).
 
 -include_lib("common_test/include/ct.hrl").
