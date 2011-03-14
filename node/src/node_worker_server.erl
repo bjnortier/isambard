@@ -35,6 +35,7 @@ call(_Msg) ->
 -record(state, {port}).
 
 init([]) ->
+    %% TODO: Move worker binary to application config
     WorkerBin = filename:join(
                   [filename:dirname(code:which(?MODULE)),
                    "..", "..", "worker", "xcode", "Debug", "worker"]),
