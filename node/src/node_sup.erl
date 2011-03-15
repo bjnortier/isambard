@@ -58,14 +58,21 @@ init([]) ->
     DocDb = {node_document_db,
              {node_document_db, start_link, []},
              permanent, 5000, worker, dynamic},
+
+    Master = {node_master,
+              {node_master, start_link, []},
+              permanent, 5000, worker, dynamic},
     
     GeomDb = {node_geom_db,
               {node_geom_db, start_link, []},
               permanent, 5000, worker, dynamic},
-    
+
+    MeshDb = {node_mesh_db,
+              {node_mesh_db, start_link, []},
+              permanent, 5000, worker, dynamic},
     WorkerServer = {node_worker_server,
                   {node_worker_server, start_link, []},
                   permanent, 5000, worker, dynamic},
 
-    Processes = [Web, DocDb, GeomDb, WorkerServer],
+    Processes = [Web, DocDb, Master, GeomDb, MeshDb, WorkerServer],
     {ok, { {one_for_one, 10, 10}, Processes} }.
