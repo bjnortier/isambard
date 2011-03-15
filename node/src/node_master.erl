@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -export([start_link/0, stop/0]).
--export([create_geom/1, mesh_geom/1, stl/1]).
+-export([create_geom/1, mesh_geom/1, exists/1, geometry/1, recursive_geometry/1, stl/1]).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -15,8 +15,17 @@ start_link() ->
 stop() ->
     gen_server:call(?MODULE, stop).
 
+exists(Id) ->
+    gen_server:call(?MODULE, {exists, Id}, 30000).
+
 create_geom(Geometry) ->
     gen_server:call(?MODULE, {create_geom, Geometry}, 30000).
+
+geometry(Id) ->
+    gen_server:call(?MODULE, {geometry, Id}, 30000).
+
+recursive_geometry(Id) ->
+    gen_server:call(?MODULE, {recursive_geometry, Id}, 30000).
 
 mesh_geom(Id) -> 
     gen_server:call(?MODULE, {mesh_geom, Id}, 30000).
@@ -32,6 +41,15 @@ stl(Id) ->
 init([]) ->
     {ok, []}.
 
+handle_call({exists, Id}, _From, State) ->
+    Reply = node_geom_db:exists(Id),
+    {reply, Reply, State};
+handle_call({geometry, Id}, _From, State) ->
+    Reply = node_geom_db:geometry(Id),
+    {reply, Reply, State};
+handle_call({recursive_geometry, Id}, _From, State) ->
+    Reply = node_geom_db:recursive_geometry(Id),
+    {reply, Reply, State};
 handle_call({create_geom, Geometry}, _From, State) ->
     {ok, Id} = node_geom_db:create(Geometry),
     {reply, {ok, Id}, State};

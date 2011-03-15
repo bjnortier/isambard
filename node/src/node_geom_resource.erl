@@ -40,10 +40,10 @@ provide_content(ReqData, Context) ->
     Id = Context#context.id,
     case wrq:get_qs_value("recursive", "false" ,ReqData) of
         "false" ->
-            Geometry = node_geom_db:geometry(Id),
+            Geometry = node_master:geometry(Id),
             {mochijson2:encode(transform_ids_to_paths(Geometry)), ReqData, Context};
         "true" ->
-            Geometry = node_geom_db:recursive_geometry(Id),
+            Geometry = node_master:recursive_geometry(Id),
             {mochijson2:encode(transform_ids_to_paths(Geometry)), ReqData, Context}
     end.
 
@@ -60,13 +60,13 @@ create_path(ReqData, Context) ->
 accept_content(ReqData, Context) ->
     case wrq:method(ReqData) of
         'POST' ->
-            Id = node_geom_db:create(Context#context.geom_json),
+            {ok, Id} = node_master:create_geom(Context#context.geom_json),
             Path = io_lib:format("/geom/~s", [Id]),
             ReqData1 = wrq:set_resp_body(
                          mochijson2:encode({struct, [{<<"path">>, iolist_to_binary(Path)}]}), ReqData),
             {true, ReqData1, Context};
         'PUT' ->
-            case node_geom_db:update(Context#context.id, Context#context.geom_json) of
+            case node_master:update_geom(Context#context.id, Context#context.geom_json) of
                 ok ->
                     {true, ReqData, Context};
                 {error, Error} ->
