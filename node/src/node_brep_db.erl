@@ -63,6 +63,12 @@ code_change(_OldVsn, State, _Extra) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
 
+%% occ_filename(Hash) ->
+%%     {ok, DbDir} = application:get_env(node, db_dir),
+%%     filename:join(
+%%       [filename:dirname(code:which(?MODULE)),
+%%        DbDir, Hash ++ ".occ"]).
+
 create_type(Hash, <<"union">>, Geometry) ->
     create_boolean(Hash, <<"union">>, Geometry);
 create_type(Hash, <<"subtract">>, Geometry) ->

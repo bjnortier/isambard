@@ -33,9 +33,6 @@ geometry(Id) ->
 recursive_geometry(Id) ->
     gen_server:call(?MODULE, {recursive_geometry, Id}, 30000).
 
-%% stl(Id) ->
-%%     gen_server:call(?MODULE, {stl, Id}, 30000).
-
 %% serialize(Id) ->
 %%     gen_server:call(?MODULE, {serialize, Id}, 30000).
 
@@ -84,16 +81,7 @@ handle_call({geometry, Id}, _From, State) ->
 handle_call({recursive_geometry, Id}, _From, State) ->
     Reply = recursive_geometry(Id, State),
     {reply, Reply, State};
-%% handle_call({stl, Id}, _From, State) ->
-%%     Filename = "scratch/" ++ Id ++ ".stl",
-%%     Msg = {struct, [{<<"type">>, <<"stl">>},
-%%                     {<<"id">>, list_to_binary(Id)},
-%%                     {<<"filename">>, list_to_binary(Filename)}
-%%                    ]},
-%%     %% TODO: Error handling
-%%     "\"ok\"" = node_worker_server:call(mochijson2:encode(Msg)),
-%%     {ok, STL} = file:read_file(Filename),
-%%     {reply, STL, State};
+
 %% handle_call({serialize, Id}, _From, State) ->
 %%     %%Msg = {struct, [{<<"type">>, <<"serialize">>},
 %%     %%                {<<"id">>, list_to_binary(Id)}]},
@@ -162,14 +150,6 @@ geom_filename(Id) ->
     filename:join(
       [filename:dirname(code:which(?MODULE)),
        DbDir, Id ++ ".geom"]).
-
-%% occ_filename(Hash) ->
-%%     {ok, DbDir} = application:get_env(node, db_dir),
-%%     filename:join(
-%%       [filename:dirname(code:which(?MODULE)),
-%%        DbDir, Hash ++ ".occ"]).
-
-
 
 recursive_geometry(Id, State) ->           
     Record = case lists:keyfind(Id, 1, State) of

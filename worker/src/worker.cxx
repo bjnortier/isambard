@@ -649,8 +649,7 @@ int main (int argc, char *argv[]) {
                 
                 mValue existsId = objMap["exists"];
                 if (!existsId.is_null() && (existsId.type() == str_type)) {
-                    map<string, TopoDS_Shape>::iterator it = shapes.find(existsId.get_str());
-                    mValue response = (it == shapes.end()) ? false : true;
+                    mValue response = (shapes.find(existsId.get_str()) == shapes.end()) ? false : true;
                     string output = write(response);
                     write_cmd(output.c_str(), output.size());
                     continue;
@@ -664,14 +663,23 @@ int main (int argc, char *argv[]) {
                     && 
                     !filename.is_null() && (filename.type() == str_type)) {
                     
-                    string filenameStr = filename.get_str();
-                    TopoDS_Shape shape = shapes[id.get_str()];
+                    mValue response;
+                    if (shapes.find(id.get_str()) == shapes.end()) {
+                        
+                        mObject error;
+                        error["error"] = "not_found";
+                        response = error;
+
+                    } else {
                     
-                    StlAPI_Writer writer;
-                    writer.Write(shape, filenameStr.c_str());
-                    
-                    // TODO: Error handling in response
-                    mValue response = mValue("ok");
+                        string filenameStr = filename.get_str();
+                        TopoDS_Shape shape = shapes[id.get_str()];
+                        
+                        StlAPI_Writer writer;
+                        writer.Write(shape, filenameStr.c_str());
+                        
+                        response = mValue("ok");
+                    }
                     string output = write(response);
                     write_cmd(output.c_str(), output.size());
                     continue;

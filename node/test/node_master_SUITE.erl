@@ -27,6 +27,8 @@ create(_Config) ->
                          {<<"parameters">>, {struct, [{<<"radius">>, 1.0}]}}]},
     {ok, Id} = node_master:create_geom(Geometry),
     {ok, {struct, _}} = node_master:mesh_geom(Id),
+    {ok, Stl} = node_master:stl(Id),
+    true = is_binary(Stl),
     ok.
 
 create_boolean(_Config) ->
@@ -54,6 +56,8 @@ create_boolean(_Config) ->
                                            ]}]},
     {ok, Id3} = node_master:create_geom(Geometry3),
     {ok, {struct, _}} = node_master:mesh_geom(Id3),
+    {ok, Stl} = node_master:stl(Id3),
+    true = is_binary(Stl),
 
     ok.
 
