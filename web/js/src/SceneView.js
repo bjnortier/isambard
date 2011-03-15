@@ -9,12 +9,12 @@ function SceneView() {
     this.camera_translate = {x: 0, y:0, z:0};
 
     var add = function(geomNode) {
-        if (geom_doc.isRoot(geomNode) && geomNode.tesselation) {
+        if (geom_doc.isRoot(geomNode) && geomNode.mesh) {
             var sceneNode = {type : "geometry",
-                             indices : geomNode.tesselation.indices,
-                             positions : geomNode.tesselation.positions,
-                             normals : geomNode.tesselation.normals,
-                             primitive : geomNode.tesselation.primitive};
+                             indices : geomNode.mesh.indices,
+                             positions : geomNode.mesh.positions,
+                             normals : geomNode.mesh.normals,
+                             primitive : geomNode.mesh.primitive};
 
             SceneJS.withNode("geom").add("node", {type: "material",
                                                   id: geomNode.path,

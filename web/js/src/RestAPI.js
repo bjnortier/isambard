@@ -29,9 +29,9 @@ function update_geom_command(fromNode, toNode) {
                         // No more -> update the root node
                         $.ajax({
                             type: 'GET',
-                            url: '/tesselation/' + idForGeomPath(nextFrom.path),
-                            success: function(tesselation) {
-                                nextTo.tesselation = tesselation;
+                            url: '/mesh/' + idForGeomPath(nextFrom.path),
+                            success: function(mesh) {
+                                nextTo.mesh = mesh;
                                 selectionManager.deselectAll();
                                 geom_doc.replace(nextFrom, nextTo);
                             }
@@ -80,13 +80,13 @@ function create_geom_command(prototype, geometry) {
                 id = idForGeomPath(nodeData.path);
                 $.ajax({
                     type: 'GET',
-                    url: '/tesselation/' + id,
-                    success: function(tesselation) {
+                    url: '/mesh/' + id,
+                    success: function(mesh) {
                         geomNode = new GeomNode({
                             type : geometry.type,
                             path : path,
                             parameters : geometry.parameters,
-                            tesselation : tesselation})
+                            mesh : mesh})
                         selectionManager.deselectAll();
                         geom_doc.replace(prototype, geomNode);
                     }
@@ -138,8 +138,8 @@ function boolean(type) {
                 id = id = idForGeomPath(nodeData.path);
                 $.ajax({
                     type: "GET",
-                    url: '/tesselation/' + id,
-                    success: function(tesselation) {
+                    url: '/mesh/' + id,
+                    success: function(mesh) {
                         childNodes = selected.map(function(x) {
                             var node = geom_doc.findByPath(x);
                             geom_doc.remove(node);
@@ -147,7 +147,7 @@ function boolean(type) {
                         });
                         geometry["path"] = path;
                         boolNode = new GeomNode(geometry, childNodes);
-                        boolNode.tesselation = tesselation;
+                        boolNode.mesh = mesh;
                         selectionManager.deselectAll();
                         geom_doc.add(boolNode);
                     }

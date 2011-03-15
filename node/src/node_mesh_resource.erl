@@ -1,4 +1,4 @@
--module(node_tesselation_resource).
+-module(node_mesh_resource).
 -export([
          init/1, 
          allowed_methods/2,
@@ -27,6 +27,6 @@ content_types_provided(ReqData, Context) ->
 
 provide_content(ReqData, Context) ->
     Id = Context#context.id,
-    {ok, Tesselation} =  node_master:mesh_geom(Id),
-    {mochijson2:encode(Tesselation), ReqData, Context}.
+    {ok, Mesh} =  node_master:mesh_geom(Id),
+    {mochijson2:encode(Mesh), ReqData, Context}.
 

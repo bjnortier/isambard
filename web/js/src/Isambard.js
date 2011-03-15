@@ -77,9 +77,9 @@ $(document).ready(function() {
                         var newNode = GeomNode.fromDeepJson(geomJson);
                         $.ajax({
                             type: 'GET',
-                            url: '/tesselation/' + idForGeomPath(path),
-                            success: function(tesselation) {
-                                newNode.tesselation = tesselation;
+                            url: '/mesh/' + idForGeomPath(path),
+                            success: function(mesh) {
+                                newNode.mesh = mesh;
                                 geom_doc.add(newNode);
                             }
                         });

@@ -34,7 +34,7 @@ function GeomNode() {
     this.path = arguments[0].path;
     this.parameters = arguments[0].parameters;
     this.transforms = arguments[0].transforms || [];
-    this.tesselation = arguments[0].tesselation;
+    this.mesh = arguments[0].mesh;
     this.children = [];
 
     if (arguments[1]) {
@@ -62,7 +62,7 @@ GeomNode.prototype.editableCopy = function() {
                                 path : this.path,
                                 parameters : copiedParameters,
                                 transforms : copiedTransforms,
-                                tesselation : this.tesselation,
+                                mesh : this.mesh,
                                }, this.children);
     return newNode;
 }
