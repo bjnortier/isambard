@@ -28,11 +28,22 @@ init([]) ->
     {ok, []}.
 
 handle_call({create_geom, Geometry}, _From, State) ->
-    Reply = node_geom_db:create(Geometry),
-    {reply, Reply, State};
+    {ok, Id} = node_geom_db:create(Geometry),
+    {reply, {ok, Id}, State};
 handle_call({mesh_geom, Id}, _From, State) ->
+    Geometry = node_geom_db:geometry(Id),
     RecursiveGeom = node_geom_db:recursive_geometry(Id),
     Hash = node_hash:hash_geometry(RecursiveGeom),
+
+    %% Create BRep if it doesn't exist
+    case node_brep_db:exists(Hash) of
+        false -> 
+            node_log:info("BREP not found. Creating BREP for ~p[~p]~n", [Id, Hash]),
+            ok = node_brep_db:create(Hash, Geometry);
+        true ->
+            ok
+    end,
+            
     Reply = node_mesh_db:mesh(Hash),
     {reply, Reply, State};
 handle_call(stop, _From, State) ->

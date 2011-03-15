@@ -647,6 +647,16 @@ int main (int argc, char *argv[]) {
                     continue;
                 }
                 
+                mValue existsId = objMap["exists"];
+                if (!existsId.is_null() && (existsId.type() == str_type)) {
+                    map<string, TopoDS_Shape>::iterator it = shapes.find(existsId.get_str());
+                    mValue response = (it == shapes.end()) ? false : true;
+                    string output = write(response);
+                    write_cmd(output.c_str(), output.size());
+                    continue;
+                }
+                
+                
                 mValue filename = objMap["filename"];
                 if (!msgType.is_null() && (msgType.type() == str_type) && (msgType.get_str() == string("stl"))
                     && 

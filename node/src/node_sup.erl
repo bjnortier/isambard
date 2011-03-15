@@ -67,6 +67,10 @@ init([]) ->
               {node_geom_db, start_link, []},
               permanent, 5000, worker, dynamic},
 
+    BrepDb = {node_brep_db,
+              {node_brep_db, start_link, []},
+              permanent, 5000, worker, dynamic},
+
     MeshDb = {node_mesh_db,
               {node_mesh_db, start_link, []},
               permanent, 5000, worker, dynamic},
@@ -74,5 +78,5 @@ init([]) ->
                   {node_worker_server, start_link, []},
                   permanent, 5000, worker, dynamic},
 
-    Processes = [Web, DocDb, Master, GeomDb, MeshDb, WorkerServer],
+    Processes = [Web, DocDb, Master, GeomDb, BrepDb, MeshDb, WorkerServer],
     {ok, { {one_for_one, 10, 10}, Processes} }.

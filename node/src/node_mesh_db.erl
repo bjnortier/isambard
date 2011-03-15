@@ -37,13 +37,13 @@ handle_call({exists, Hash}, _From, State) ->
 handle_call({mesh, Hash}, _From, State) ->
     Reply = case lists:keyfind(Hash, 1, State) of
                 {Hash, Mesh} -> 
-                    Mesh;
+                    {ok, Mesh};
                 false -> 
-                    io:format("meshing ~p~n", [Hash]),
-                    mochijson2:decode(
-                      node_worker_server:call(
-                        mochijson2:encode(
-                          {struct, [{<<"tesselate">>, list_to_binary(Hash)}]})))
+                    node_log:info("meshing ~p~n", [Hash]),
+                    {ok, mochijson2:decode(
+                           node_worker_server:call(
+                             mochijson2:encode(
+                               {struct, [{<<"tesselate">>, list_to_binary(Hash)}]})))}
             end,
     {reply, Reply, State};
 handle_call(stop, _From, State) ->

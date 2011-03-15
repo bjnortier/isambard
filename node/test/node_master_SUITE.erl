@@ -25,15 +25,15 @@ end_per_suite(_Config) ->
 create(_Config) ->
     Geometry = {struct, [{<<"type">>, <<"sphere">>},
                          {<<"parameters">>, {struct, [{<<"radius">>, 1.0}]}}]},
-    Id = node_master:create_geom(Geometry),
-    {struct, _} = node_master:mesh_geom(Id),
+    {ok, Id} = node_master:create_geom(Geometry),
+    {ok, {struct, _}} = node_master:mesh_geom(Id),
     ok.
 
 create_boolean(_Config) ->
     Geometry1 = {struct, [{<<"type">>, <<"sphere">>},
                           {<<"parameters">>, {struct, [{<<"radius">>, 1.0}]}}]},
     {ok, Id1} = node_master:create_geom(Geometry1),
-    {struct, _} = node_master:mesh_geom(Id1),
+    {ok, {struct, _}} = node_master:mesh_geom(Id1),
 
     Geometry2 = {struct, [{<<"type">>, <<"sphere">>},
                           {<<"parameters">>, {struct, [{<<"radius">>, 1.0}]}},
@@ -45,16 +45,15 @@ create_boolean(_Config) ->
                                              ]}]},
                           
     {ok, Id2} = node_master:create_geom(Geometry2),
-    {struct, _} = node_master:mesh_geom(Id2),
+    {ok, {struct, _}} = node_master:mesh_geom(Id2),
     
-
     Geometry3 = {struct, [{<<"type">>, <<"union">>},
                           {<<"children">>, [
                                             list_to_binary(Id1),
                                             list_to_binary(Id2)
                                            ]}]},
     {ok, Id3} = node_master:create_geom(Geometry3),
-    {struct, _} = node_master:mesh_geom(Id3),
+    {ok, {struct, _}} = node_master:mesh_geom(Id3),
 
     ok.
 
