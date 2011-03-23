@@ -13,6 +13,6 @@
                   webmachine
                  ]},
   {mod, { node_app, []}},
-  {env, [{db_dir, "../../db"},
+  {env, [{db_dir, "../db"},
          {port, 8000}]}
  ]}.

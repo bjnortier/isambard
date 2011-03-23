@@ -88,8 +88,8 @@ load_from_file(DocId) ->
     {ok, Contents} = file:read_file(filename(DocId)),
     GeomIds = binary_to_term(Contents),
     lists:map(fun(GeomId) ->
-                      node_geom_db:deserialize(GeomId),
-                      load_with_children(GeomId, node_geom_db:geometry(GeomId))
+                      node_master:deserialize_geom(GeomId),
+                      load_with_children(node_geom_db:geometry(GeomId))
               end,
               GeomIds),
     node_log:info("loaded geomIds: ~p~n", [GeomIds]),
@@ -104,15 +104,16 @@ save_to_file(DocId, GeomIds) ->
               GeomIds),
     ok.
 
-load_with_children(GeomId, {struct, Props}) ->
+load_with_children(Geometry = {struct, Props}) ->
+    node_log:info("Loading geometry: ~n~p~n", [Geometry]),
     case lists:keyfind(<<"children">>, 1, Props) of
         {<<"children">>, ChildIds} ->
             lists:map(fun(ChildIdBin) ->
                               ChildId = binary_to_list(ChildIdBin),
-                              node_geom_db:deserialize(ChildId),
+                              node_master:deserialize_geom(ChildId),
                               ChildGeometry = node_geom_db:geometry(ChildId),
-                              node_log:info("Loading child geometry: ~n~p~n", [ChildGeometry]),
-                              load_with_children(ChildId, ChildGeometry)
+
+                              load_with_children(ChildGeometry)
                       end,
                       ChildIds);
         false ->
@@ -133,6 +134,9 @@ save_with_children(GeomId, {struct, Props}) ->
         false ->
             ok
     end,
-    ok = node_geom_db:serialize(GeomId).
+    ok = node_master:serialize_geom(GeomId),
+    ok = node_master:serialize_brep(GeomId),
+    ok.
+    
 
             

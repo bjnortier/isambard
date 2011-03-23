@@ -6,7 +6,9 @@
 
 hash_geometry(Geometry) ->
     Filtered = hashable(Geometry),
-    hex_binary(crypto:sha(term_to_binary(Filtered))).
+    Hash = hex_binary(crypto:sha(term_to_binary(Filtered))),
+    node_log:info("Hashing ~p~n->~p~n", [Geometry, Hash]),
+    Hash.
 
 hex_binary(Binary) when is_binary(Binary) ->
     lists:flatten([hex_octet(X) || X <- binary_to_list(Binary)]).

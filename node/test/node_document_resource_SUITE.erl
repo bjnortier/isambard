@@ -3,16 +3,6 @@
 
 -include_lib("common_test/include/ct.hrl").
 
-
-%%--------------------------------------------------------------------
-%% Test server callback functions
-%%--------------------------------------------------------------------
-
-%%--------------------------------------------------------------------
-%% Function: suite() -> DefaultData
-%% DefaultData: [tuple()]
-%% Description: Require variables and set default values for the suite
-%%--------------------------------------------------------------------
 suite() -> [{timetrap,{minutes,1}}].
 
 all() ->

@@ -61,11 +61,35 @@ using namespace json_spirit;
 // TODO: compress 1.00000000 into 1.0 etc. Also reduce precision
 
 
-map< string, TopoDS_Shape > shapes = map< string, TopoDS_Shape >();
+map< string, TopoDS_Shape > unmeshed_shapes = map< string, TopoDS_Shape >();
+map< string, TopoDS_Shape > meshed_shapes = map< string, TopoDS_Shape >();
 
-mValue tesselate(string id) {
-    TopoDS_Shape shape = shapes[id];
+TopoDS_Shape find_shape(string id) {
+    map< string, TopoDS_Shape >::iterator meshedIt = meshed_shapes.find(id);
+    if (meshedIt != meshed_shapes.end()) {
+        return (*meshedIt).second;
+    } 
+    
+    map< string, TopoDS_Shape >::iterator unmeshedIt = unmeshed_shapes.find(id);
+    if (unmeshedIt != unmeshed_shapes.end()) {
+        return (*unmeshedIt).second;
+    }
+    return TopoDS_Shape();
+}
+
+void mesh(string id) {
+    TopoDS_Shape shape = unmeshed_shapes[id];
     BRepMesh().Mesh(shape, 0.0125);
+    
+    meshed_shapes[id] = unmeshed_shapes[id];
+    unmeshed_shapes.erase(id);
+}
+    
+    
+mValue tesselate(string id) {
+    
+    
+    TopoDS_Shape shape = meshed_shapes[id];
     
     mArray indices;
     mArray positions;
@@ -121,7 +145,7 @@ mValue tesselate(string id) {
     result["positions"] = positions;
     result["normals"] = normalArr;
     result["indices"] = indices;
-    
+
     return result;
 }
 
@@ -390,7 +414,7 @@ string create_cuboid(string id, map< string, mValue > geometry) {
                                                  get_double(depth), 
                                                  get_double(height)).Shape();
         
-        shapes[id] = applyTransforms(shape, geometry);
+        unmeshed_shapes[id] = applyTransforms(shape, geometry);
         return "ok";
     }
     return "invalid geometry parameters";
@@ -401,7 +425,7 @@ string create_sphere(string id, map< string, mValue > geometry) {
     mValue radius = parameters["radius"];
     if (!radius.is_null() && ((radius.type() == real_type) || (radius.type() == int_type))) {
         TopoDS_Shape shape = BRepPrimAPI_MakeSphere(get_double(radius)).Shape();
-        shapes[id] = applyTransforms(shape, geometry);
+        unmeshed_shapes[id] = applyTransforms(shape, geometry);
         return "ok";
     }
     return "invalid geometry parameters";
@@ -417,7 +441,7 @@ string create_cylinder(string id, map< string, mValue > geometry) {
         
         TopoDS_Shape shape = BRepPrimAPI_MakeCylinder(get_double(radius), 
                                                       get_double(height)).Shape();
-        shapes[id] = applyTransforms(shape, geometry);
+        unmeshed_shapes[id] = applyTransforms(shape, geometry);
         return "ok";
     }
     return "invalid geometry parameters";
@@ -437,7 +461,7 @@ string create_cone(string id, map< string, mValue > geometry) {
         TopoDS_Shape shape = BRepPrimAPI_MakeCone(get_double(bottom_radius), 
                                                   get_double(top_radius), 
                                                   get_double(height)).Shape();
-        shapes[id] = applyTransforms(shape, geometry);
+        unmeshed_shapes[id] = applyTransforms(shape, geometry);
         return "ok";
     }
     return "invalid geometry parameters";
@@ -461,7 +485,7 @@ string create_wedge(string id, map< string, mValue > geometry) {
                                                    get_double(y), 
                                                    get_double(z), 
                                                    get_double(x2)).Shape();
-        shapes[id] = applyTransforms(shape, geometry);
+        unmeshed_shapes[id] = applyTransforms(shape, geometry);
         return "ok";
     }
     return "invalid geometry parameters";
@@ -477,7 +501,7 @@ string create_torus(string id, map< string, mValue > geometry) {
         
         TopoDS_Shape shape = BRepPrimAPI_MakeTorus(get_double(r1), 
                                                    get_double(r2)).Shape();
-        shapes[id] = applyTransforms(shape, geometry);
+        unmeshed_shapes[id] = applyTransforms(shape, geometry);
         return "ok";
     }
     return "invalid geometry parameters";
@@ -491,13 +515,13 @@ string create_union(string id, map< string, mValue > geometry) {
         return("invalid children");
     }
     
-    TopoDS_Shape boolean_shape = BRepAlgoAPI_Fuse(shapes[children[0].get_str()], 
-                                                  shapes[children[1].get_str()]).Shape();
+    TopoDS_Shape boolean_shape = BRepAlgoAPI_Fuse(find_shape(children[0].get_str()), 
+                                                  find_shape(children[1].get_str())).Shape();
     for (unsigned int i = 2; i < children.size(); ++i) {
         boolean_shape = BRepAlgoAPI_Fuse(boolean_shape,
-                                         shapes[children[i].get_str()]).Shape();
+                                         find_shape(children[i].get_str())).Shape();
     }
-    shapes[id] = applyTransforms(boolean_shape, geometry);
+    unmeshed_shapes[id] = applyTransforms(boolean_shape, geometry);
     return "ok";
 }
 
@@ -507,13 +531,13 @@ string create_intersect(string id, map< string, mValue > geometry) {
         return("invalid children");
     }
     
-    TopoDS_Shape boolean_shape = BRepAlgoAPI_Common(shapes[children[0].get_str()], 
-                                                  shapes[children[1].get_str()]).Shape();
+    TopoDS_Shape boolean_shape = BRepAlgoAPI_Common(find_shape(children[0].get_str()), 
+                                                    find_shape(children[1].get_str())).Shape();
     for (unsigned int i = 2; i < children.size(); ++i) {
         boolean_shape = BRepAlgoAPI_Common(boolean_shape,
-                                         shapes[children[i].get_str()]).Shape();
+                                           find_shape(children[i].get_str())).Shape();
     }
-    shapes[id] = applyTransforms(boolean_shape, geometry);
+    unmeshed_shapes[id] = applyTransforms(boolean_shape, geometry);
     return "ok";
 }
 
@@ -523,9 +547,9 @@ string create_subtract(string id, map< string, mValue > geometry) {
         return("only 2 children supported");
     }
     
-    TopoDS_Shape boolean_shape = BRepAlgoAPI_Cut(shapes[children[1].get_str()], 
-                                                 shapes[children[0].get_str()]).Shape();
-    shapes[id] = applyTransforms(boolean_shape, geometry);
+    TopoDS_Shape boolean_shape = BRepAlgoAPI_Cut(find_shape(children[1].get_str()), 
+                                                 find_shape(children[0].get_str())).Shape();
+    unmeshed_shapes[id] = applyTransforms(boolean_shape, geometry);
     return "ok";
 }
 
@@ -641,7 +665,23 @@ int main (int argc, char *argv[]) {
                 
                 mValue tesselateId = objMap["tesselate"];
                 if (!tesselateId.is_null() && (tesselateId.type() == str_type)) {
-                    mValue response = tesselate(tesselateId.get_str());
+                    
+                    mValue response;
+                    if (unmeshed_shapes.find(tesselateId.get_str()) != unmeshed_shapes.end()) {
+                        // Mesh it first
+                        mesh(tesselateId.get_str());
+                    }
+                    
+                    // It should now be in the map of meshed shapes
+                    if (meshed_shapes.find(tesselateId.get_str()) != meshed_shapes.end()) {
+                        response = tesselate(tesselateId.get_str());
+                        
+                    } else {
+                        mObject error;
+                        error["error"] = "not_found";
+                        response = error;
+                        
+                    }
                     string output = write(response);
                     write_cmd(output.c_str(), output.size());
                     continue;
@@ -649,7 +689,11 @@ int main (int argc, char *argv[]) {
                 
                 mValue existsId = objMap["exists"];
                 if (!existsId.is_null() && (existsId.type() == str_type)) {
-                    mValue response = (shapes.find(existsId.get_str()) == shapes.end()) ? false : true;
+                    
+                    
+                    mValue response = !((unmeshed_shapes.find(existsId.get_str()) == unmeshed_shapes.end())
+                                        &&
+                                        (meshed_shapes.find(existsId.get_str()) == meshed_shapes.end()));
                     string output = write(response);
                     write_cmd(output.c_str(), output.size());
                     continue;
@@ -664,7 +708,8 @@ int main (int argc, char *argv[]) {
                     !filename.is_null() && (filename.type() == str_type)) {
                     
                     mValue response;
-                    if (shapes.find(id.get_str()) == shapes.end()) {
+                    TopoDS_Shape potentialShape = find_shape(id.get_str());
+                    if (potentialShape.IsNull()) {
                         
                         mObject error;
                         error["error"] = "not_found";
@@ -673,7 +718,7 @@ int main (int argc, char *argv[]) {
                     } else {
                     
                         string filenameStr = filename.get_str();
-                        TopoDS_Shape shape = shapes[id.get_str()];
+                        TopoDS_Shape shape = potentialShape;
                         
                         StlAPI_Writer writer;
                         writer.Write(shape, filenameStr.c_str());
@@ -689,8 +734,20 @@ int main (int argc, char *argv[]) {
                     &&
                     !id.is_null() && (id.type() == str_type)) {
                     
-                    TopoDS_Shape shape = shapes[id.get_str()];
+                    // Mesh it first if it is not meshed
+                    if (unmeshed_shapes.find(id.get_str()) != unmeshed_shapes.end()) {
+                        mesh(id.get_str());
+                    }
+                        
+                    if (meshed_shapes.find(id.get_str()) == meshed_shapes.end()) {
+                        mObject error;
+                        error["error"] = "not_found";
+                        string output = write(error);
+                        write_cmd(output.c_str(), output.size());
+                        continue;
+                    }
                     
+                    TopoDS_Shape shape = meshed_shapes[id.get_str()];
                     char fileName[50];
                     sprintf(fileName, "/tmp/%s.bin", id.get_str().c_str());
                     
@@ -700,7 +757,7 @@ int main (int argc, char *argv[]) {
                     Handle(Storage_Data) d = new Storage_Data;
                     
                     PTColStd_TransientPersistentMap aMap;
-                    Handle(PTopoDS_HShape) aPShape = MgtBRep::Translate(shape, aMap, MgtBRep_WithoutTriangle);
+                    Handle(PTopoDS_HShape) aPShape = MgtBRep::Translate(shape, aMap, MgtBRep_WithTriangle);
                     
                     d->AddRoot("ObjectName", aPShape);
                     Handle(ShapeSchema) s = new ShapeSchema;
@@ -767,9 +824,9 @@ int main (int argc, char *argv[]) {
                     // Create the shape
                     PTColStd_PersistentTransientMap aMap;
                     TopoDS_Shape resultingShape;
-                    MgtBRep::Translate(aPShape, aMap, resultingShape, MgtBRep_WithoutTriangle);
+                    MgtBRep::Translate(aPShape, aMap, resultingShape, MgtBRep_WithTriangle);
                     
-                    shapes[id.get_str()] = resultingShape;
+                    meshed_shapes[id.get_str()] = resultingShape;
                     
                     mValue response = mValue("ok");
                     string output = write(response);
@@ -780,17 +837,23 @@ int main (int argc, char *argv[]) {
                 
             }
             
-            mValue response = mValue("unknown message");
-            string output = write(response);
+            mObject error;
+            error["error"] = "unknown message";
+            string output = write(error);
             write_cmd(output.c_str(), output.size());
             
         } catch (exception& e) {
-            mValue response = mValue(e.what());
-            string output = write(response);
+            
+            mObject error;
+            error["error"] = e.what();
+            string output = write(error);
             write_cmd(output.c_str(), output.size());
+
         } catch (...) {
-            mValue response = mValue("exception!");
-            string output = write(response);
+
+            mObject error;
+            error["error"] = "exception!";
+            string output = write(error);
             write_cmd(output.c_str(), output.size());
             
         }

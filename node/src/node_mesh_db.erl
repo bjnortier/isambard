@@ -42,11 +42,17 @@ handle_call({mesh, Hash}, _From, State) ->
                 {Hash, Mesh} -> 
                     {ok, Mesh};
                 false -> 
-                    node_log:info("meshing ~p~n", [Hash]),
-                    {ok, mochijson2:decode(
-                           node_worker_server:call(
-                             mochijson2:encode(
-                               {struct, [{<<"tesselate">>, list_to_binary(Hash)}]})))}
+                    node_log:info("meshing hash:~p~n", [Hash]),
+                    Result = mochijson2:decode(
+                               node_worker_server:call(
+                                 mochijson2:encode(
+                                   {struct, [{<<"tesselate">>, list_to_binary(Hash)}]}))),
+                    case Result of
+                        {struct, [{<<"error">>, E}]} ->
+                            {error, E};
+                        _ ->
+                            {ok, Result}
+                    end
             end,
     {reply, Reply, State};
 handle_call({stl, Hash}, _From, State) ->
