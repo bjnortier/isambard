@@ -19,7 +19,7 @@ allowed_methods(ReqData, Context) ->
     {['GET'], ReqData, Context}.
 
 resource_exists(ReqData, Context) ->
-    Exists = node_document_db:exists(Context#context.id),
+    Exists = node_master:exists(Context#context.id),
     {Exists, ReqData, Context}.
 
 content_types_provided(ReqData, Context) ->
@@ -27,7 +27,7 @@ content_types_provided(ReqData, Context) ->
 
 provide_content(ReqData, Context) ->
     Id = Context#context.id,
-    STL = node_document_db:stl(Id),
+    {ok, STL} = node_master:stl(Id),
     ReqData1 =  wrq:set_resp_header("Content-disposition",
                                     "attachment; filename=" ++ Id ++ ".stl",
                                     ReqData),
