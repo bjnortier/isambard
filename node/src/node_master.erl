@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -export([start_link/0, stop/0]).
--export([create_geom/1, mesh_geom/1, exists/1, geometry/1, recursive_geometry/1, stl/1]).
+-export([create_geom/1, update_geom/2, mesh_geom/1, exists/1, geometry/1, recursive_geometry/1, stl/1]).
 -export([serialize_geom/1, deserialize_geom/1]).
 -export([serialize_brep/1, deserialize_brep/1]).
 
@@ -22,6 +22,9 @@ exists(Id) ->
 
 create_geom(Geometry) ->
     gen_server:call(?MODULE, {create_geom, Geometry}, 30000).
+update_geom(Id, Geometry) ->
+    gen_server:call(?MODULE, {update_geom, Id, Geometry}, 30000).
+
 
 geometry(Id) ->
     gen_server:call(?MODULE, {geometry, Id}, 30000).
@@ -68,6 +71,9 @@ handle_call({recursive_geometry, Id}, _From, State) ->
 handle_call({create_geom, Geometry}, _From, State) ->
     {ok, Id} = node_geom_db:create(Geometry),
     {reply, {ok, Id}, State};
+handle_call({update_geom, Id, Geometry}, _From, State) ->
+    ok = node_geom_db:update(Id, Geometry),
+    {reply, ok, State};
 handle_call({serialize_geom, Id}, _From, State) ->
     ok = node_geom_db:serialize(Id),
     {reply, ok, State};

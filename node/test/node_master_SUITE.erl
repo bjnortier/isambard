@@ -143,6 +143,7 @@ serialize_boolean(_Config) ->
     node_master:serialize_geom(Id1),
     node_master:serialize_geom(Id2),
     node_master:serialize_geom(Id3),
+    node_master:mesh_geom(Id1),
     node_master:serialize_brep(Id1),
 
     %% Restart application
@@ -154,7 +155,7 @@ serialize_boolean(_Config) ->
     ok = node_master:deserialize_geom(Id2),
     ok = node_master:deserialize_geom(Id3),
 
-    {ok, {struct, _}} = node_master:mesh_geom(Id1),
+    {ok, {struct, _}} = node_master:mesh_geom(Id3),
 
     %% All three objects have been created from a worker
     BRepLog = node_brep_db:log(),
@@ -212,34 +213,3 @@ serialize_deep_boolean(_Config) ->
     {ok, {struct, _}} = node_master:mesh_geom(Id5),
 
     ok.
-
-
-%% serialize(_Config) ->
-%%     Geometry = {struct, [{<<"type">>, <<"sphere">>},
-%%                          {<<"parameters">>, {struct, [{<<"radius">>, 1.0}]}}]},
-%%     Id = node_geom_db:create(Geometry),
-
-%%     LocalTimeBeforeSerialize = calendar:local_time(),
-%%     ok = node_geom_db:serialize(Id),
-
-%%     %% After serialization, both the geometry (using the id), and the OpenCASCADE
-%%     %% serialized data (according to the hash of hte geometry), should have been persisted
-%%     {ok, DbDir} = application:get_env(node, db_dir),
-%%     GeomFilename = filename:join(
-%%                      [filename:dirname(code:which(?MODULE)),
-%%                       DbDir, Id ++ ".geom"]),
-
-%%     {ok, GeomRecord} = file:read_file_info(GeomFilename),
-%%     regular = GeomRecord#file_info.type,
-%%     true = GeomRecord#file_info.mtime >= LocalTimeBeforeSerialize,
-
-%%     Hash = node_hash:hash_geometry(Geometry),
-%%     OCCFileName = filename:join(
-%%                             [filename:dirname(code:which(?MODULE)),
-%%                              DbDir, Hash ++ ".occ"]),
-
-%%     {ok, OccRecord} = file:read_file_info(OCCFileName),
-%%     regular = OccRecord#file_info.type,
-%%     true = OccRecord#file_info.mtime >= LocalTimeBeforeSerialize,
-
-%%     ok.
