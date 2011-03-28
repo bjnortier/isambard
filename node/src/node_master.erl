@@ -88,6 +88,8 @@ handle_call({mesh_geom, Id}, _From, State) ->
     {reply, Reply, State};
 handle_call({serialize_brep, Id}, _From, State) ->
     Hash = node_geom_db:hash(Id),
+    Geometry = node_geom_db:geometry(Id),
+    ok = ensure_brep_exists(Id, Geometry, Hash),
     ok = node_brep_db:serialize(Hash),
     {reply, ok, State};
 handle_call({stl, Id}, _From, State) ->

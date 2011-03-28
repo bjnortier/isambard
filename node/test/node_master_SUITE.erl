@@ -22,11 +22,12 @@ init_per_testcase(_TestCase, Config) ->
     ok = application:set_env(node, db_dir, filename:join(["../test_db/", ?MODULE])),
     ok = node:start(),
 
+    
+    %% Clean the directory
     TestDb = filename:join(
                [filename:dirname(code:which(?MODULE)), "../test_db/", ?MODULE]),
     ok = filelib:ensure_dir(TestDb),
-    
-    %% Clean the directory
+    file:make_dir(TestDb),
     {ok, Files} = file:list_dir(TestDb),
     [file:delete(filename:join(TestDb, File)) || File <- Files],
     {ok, []} = file:list_dir(TestDb),
