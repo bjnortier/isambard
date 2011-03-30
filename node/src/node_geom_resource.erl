@@ -58,22 +58,7 @@ create_path(ReqData, Context) ->
     {"/geom/1", ReqData, Context}. 
 
 accept_content(ReqData, Context) ->
-    case wrq:method(ReqData) of
-        'POST' ->
-            {ok, Id} = node_master:create_geom(Context#context.geom_json),
-            Path = io_lib:format("/geom/~s", [Id]),
-            ReqData1 = wrq:set_resp_body(
-                         mochijson2:encode({struct, [{<<"path">>, iolist_to_binary(Path)}]}), ReqData),
-            {true, ReqData1, Context};
-        'PUT' ->
-            case node_master:update_geom(Context#context.id, Context#context.geom_json) of
-                ok ->
-                    {true, ReqData, Context};
-                {error, Error} ->
-                    io:format("ERR: ~p~n", [Error]),
-                    {false, ReqData, Context}
-            end
-    end.
+    {true, ReqData, Context}.
 
 
 malformed_request(ReqData, Context) ->
@@ -93,20 +78,49 @@ malformed_request(ReqData, Context, 'PUT') ->
         undefined ->
             {true, wrq:set_resp_body("missing id: /geom/<id>", ReqData), Context};
         Id when is_list(Id) ->
-            malformed_json_request(ReqData, Context#context{id = Id})
+	    case valid_json(wrq:req_body(ReqData)) of
+		{true, JSON} ->
+		    case node_master:update_geom(Id, transform_paths_to_ids(JSON)) of
+			ok ->
+			    {false, ReqData, Context};
+			{error, {validation, ErrorParams}} ->
+			    ReqData1 = wrq:set_resp_body(
+					 mochijson2:encode(ErrorParams), ReqData),
+			    {true, ReqData1, Context}
+		    end;
+		false ->
+		    {true, ReqData, Context}
+	    end
     end;
 malformed_request(ReqData, Context, 'POST') ->
-    malformed_json_request(ReqData, Context).
+    case valid_json(wrq:req_body(ReqData)) of
+	{true, JSON} ->
+	    JSONWithIds = transform_paths_to_ids(JSON),
+	    case node_master:create_geom(JSONWithIds) of
+		{ok, Id} ->
+		    Path = io_lib:format("/geom/~s", [Id]),
+		    ReqData1 = wrq:set_resp_body(
+				 mochijson2:encode({struct, [{<<"path">>, iolist_to_binary(Path)}]}), ReqData),
+		    {false, ReqData1, Context};
+		{error, {validation, ErrorParams}} ->
+		    ReqData1 = wrq:set_resp_body(
+				 mochijson2:encode(ErrorParams), ReqData),
 
-malformed_json_request(ReqData, Context) ->
-    Body = wrq:req_body(ReqData),
+		    {true, ReqData1, Context}
+	    end;
+	false ->
+	    ReqData1 = wrq:set_resp_body(<<"\"invalid json\"">>, ReqData),
+	    {true, ReqData1, Context}
+    end.
+
+
+valid_json(Body) ->
     try 
-	JSON = mochijson2:decode(Body),
-        {false, ReqData, Context#context{ geom_json = transform_paths_to_ids(JSON) }}
+	{true, mochijson2:decode(Body)}
     catch
-	A:B ->
-            node_log:info("malformed request: ~p -> ~p:~p", [Body, A, B]),
-	    {true, wrq:set_resp_body("invalid JSON", ReqData), Context}
+	_:_ ->
+            node_log:info("invalid JSON: ~p", [Body]),
+	    false
     end.
 
 

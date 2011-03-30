@@ -89,8 +89,17 @@ function create_geom_command(prototype, geometry) {
                             mesh : mesh})
                         selectionManager.deselectAll();
                         geom_doc.replace(prototype, geomNode);
+                        command_stack.inProgressSuccess();
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.log('error: ' + textStatus);
+                        command_stack.inProgressFailure();
                     }
                 });
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.log('error: ' + textStatus);
+                command_stack.inProgressFailure();
             }
         });
     };

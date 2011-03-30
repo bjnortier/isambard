@@ -12,29 +12,38 @@ function Command(doFn, undoFn, redoFn) {
 function CommandStack() {
     var commands = [];
     var last_executed_index = -1;
+    var successFn;
 
     this.execute = function(command) {
+        showSpinner();
         command.do();
-        commands.splice(last_executed_index + 1, commands.length - (last_executed_index) - 1);
-        commands.push(command);
-        last_executed_index  += 1;
+        successFn = function() {
+            commands.splice(last_executed_index + 1, commands.length - (last_executed_index) - 1);
+            commands.push(command);
+            last_executed_index  += 1;
+        }
     }
 
     this.undo = function() {
         if (last_executed_index < 0) {
             throw Error('Undo past beginning');
         }
+        showSpinner();
         commands[last_executed_index].undo();
-        last_executed_index -= 1;
-        
-    };
+        successFn = function() {
+            last_executed_index -= 1;
+        }
+    }
 
     this.redo = function() {
         if (last_executed_index + 1 > commands.length - 1) {
             throw Error('Redo past end');
         }
-        last_executed_index += 1;
-        commands[last_executed_index].redo();
+        showSpinner();
+        commands[last_executed_index + 1].redo();
+        successFn = function() {
+            last_executed_index += 1;
+        }
     };
 
     this.canUndo = function() {
@@ -45,5 +54,23 @@ function CommandStack() {
         return last_executed_index < commands.length - 1;
     };
 
+    var showSpinner = function() {
+        $('#progress').append('<img src="images/progress-spinner.gif" alt="in progress"/>');
+    }
+
+    var hideSpinner = function() {
+        $('#progress').empty();
+    }
+
+    this.inProgressSuccess = function() {
+        console.log("command in progress success");
+        successFn();
+        hideSpinner();
+    }
+
+    this.inProgressFailure = function() {
+        console.log("command in progress failure");
+        hideSpinner();
+    }
     
 }

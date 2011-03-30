@@ -69,11 +69,11 @@ handle_call({recursive_geometry, Id}, _From, State) ->
     Reply = node_geom_db:recursive_geometry(Id),
     {reply, Reply, State};
 handle_call({create_geom, Geometry}, _From, State) ->
-    {ok, Id} = node_geom_db:create(Geometry),
-    {reply, {ok, Id}, State};
+    Reply = node_geom_db:create(Geometry),
+    {reply, Reply, State};
 handle_call({update_geom, Id, Geometry}, _From, State) ->
-    ok = node_geom_db:update(Id, Geometry),
-    {reply, ok, State};
+    Reply = node_geom_db:update(Id, Geometry),
+    {reply, Reply, State};
 handle_call({serialize_geom, Id}, _From, State) ->
     ok = node_geom_db:serialize(Id),
     {reply, ok, State};

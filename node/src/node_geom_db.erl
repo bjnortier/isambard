@@ -65,12 +65,22 @@ handle_call({raw_geom_record, Id}, _From, State) ->
             end,
     {reply, Reply, State};
 handle_call({create, Geometry}, _From, State) ->
-    Id = node_uuid:uuid(),
-    NewState = [{Id, #geom_doc{ geometry = Geometry }}|State],
-    {reply, {ok, Id}, NewState};
+    case node_validation:geom(Geometry) of
+        {error, ErrorParams} ->
+            {reply, {error, {validation, ErrorParams}}, State};
+        ok ->
+            Id = node_uuid:uuid(),
+            NewState = [{Id, #geom_doc{ geometry = Geometry }}|State],
+            {reply, {ok, Id}, NewState}
+    end;
 handle_call({update, Id, Geometry}, _From, State) ->
-    NewState = lists:keyreplace(Id, 1, State, {Id, #geom_doc{ geometry = Geometry }}),
-    {reply, ok, NewState};
+    case node_validation:geom(Geometry) of
+        {error, ErrorParams} ->
+            {reply, {error, {validation, ErrorParams}}, State};
+        ok ->
+            NewState = lists:keyreplace(Id, 1, State, {Id, #geom_doc{ geometry = Geometry }}),
+            {reply, ok, NewState}
+    end;
 handle_call({geometry, Id}, _From, State) ->
     Reply = case lists:keyfind(Id, 1, State) of
                 {Id, Record} -> 
