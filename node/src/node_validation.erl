@@ -52,6 +52,15 @@ validate_type(<<"cuboid">>, Props) ->
 					     {<<"height">>, fun positive/1}
 					    ])
     end;
+validate_type(<<"cylinder">>, Props) ->
+    case lists:keyfind(<<"parameters">>, 1, Props) of
+	false ->
+	    {error, <<"no parameters specified">>};
+	{_, Parameters} ->
+	    validate_parameters(Parameters, [{<<"radius">>, fun positive/1},
+					     {<<"height">>, fun positive/1}
+					    ])
+    end;
 validate_type(<<"union">>, Props) ->
     validate_boolean(Props);
 validate_type(<<"subtract">>, Props) ->
