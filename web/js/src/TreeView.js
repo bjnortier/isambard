@@ -52,7 +52,7 @@ function renderNode(geomNode) {
                            });
         }
     }
-    var template = '<table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^editing}}<span class="{{clazz}}">{{value}}</span>{{/editing}}{{#editing}}<input id="{{key}}" type="text" value="{{value}}"/>{{/editing}}</td></tr>{{/paramsArr}}</table>';
+    var template = '<table>{{#paramsArr}}<tr {{#editing}}class="field"{{/editing}}><td>{{key}}</td><td>{{^editing}}<span class="{{clazz}}">{{value}}</span>{{/editing}}{{#editing}}<input id="{{key}}" type="text" value="{{value}}"/>{{/editing}}</td></tr>{{/paramsArr}}</table>';
     var paramsTable = $.mustache(template, {paramsArr : paramsArr});
 
     // Transforms
@@ -167,8 +167,8 @@ function TreeView() {
             }
         }
 
-        $("tr:nth-child(even)").addClass("even");
-        $("tr:nth-child(odd)").addClass("odd");
+        $("#geom-model-doc tr:nth-child(even)").addClass("even");
+        $("#geom-model-doc tr:nth-child(odd)").addClass("odd");
 
         $('.select-geom').click(function(event) {
             var id;

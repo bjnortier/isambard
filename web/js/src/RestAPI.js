@@ -34,9 +34,17 @@ function update_geom_command(fromNode, toNode) {
                                 nextTo.mesh = mesh;
                                 selectionManager.deselectAll();
                                 geom_doc.replace(nextFrom, nextTo);
-                            }
+				command_stack.inProgressSuccess();
+                            },
+			    error: function(jqXHR, textStatus, errorThrown) {
+				render_error(jqXHR.responseText);
+			    }
+
                         });
                     }
+                },
+		error: function(jqXHR, textStatus, errorThrown) {
+		    render_error(jqXHR.responseText);
                 }
             });
         }
@@ -63,6 +71,16 @@ function update_geom_command(fromNode, toNode) {
     return new Command(doFn, undoFn, redoFn);
 }
 
+function render_error(responseText) {
+    var error = JSON.parse(responseText);
+    if (error.validation) {
+	for (var i in error.validation) {
+	    $('#' + i).parents('tr.field').addClass('validation-error');
+	}
+    }
+    command_stack.inProgressFailure();
+}
+
 
 function create_geom_command(prototype, geometry) {
     
@@ -75,12 +93,14 @@ function create_geom_command(prototype, geometry) {
             url: '/geom/',
             contentType: 'application/json',
             data: JSON.stringify(geometry),
+	    dataType: 'json',
             success: function(nodeData){
                 var path = nodeData.path;
                 id = idForGeomPath(nodeData.path);
                 $.ajax({
                     type: 'GET',
                     url: '/mesh/' + id,
+		    dataType: 'json',
                     success: function(mesh) {
                         geomNode = new GeomNode({
                             type : geometry.type,
@@ -92,14 +112,12 @@ function create_geom_command(prototype, geometry) {
                         command_stack.inProgressSuccess();
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
-                        console.log('error: ' + textStatus);
-                        command_stack.inProgressFailure();
+			render_error(jqXHR.responseText);
                     }
                 });
             },
             error: function(jqXHR, textStatus, errorThrown) {
-                console.log('error: ' + textStatus);
-                command_stack.inProgressFailure();
+                render_error(jqXHR.responseText);
             }
         });
     };
@@ -142,7 +160,7 @@ function boolean(type) {
             url: "/geom/",
             contentType: "application/json",
             data: JSON.stringify(geometry),
-            success: function(nodeData){
+            success: function(nodeData) {
                 var path = nodeData.path;
                 id = id = idForGeomPath(nodeData.path);
                 $.ajax({
@@ -159,16 +177,25 @@ function boolean(type) {
                         boolNode.mesh = mesh;
                         selectionManager.deselectAll();
                         geom_doc.add(boolNode);
-                    }
+			command_stack.inProgressSuccess();
+                    },
+		    error: function(jqXHR, textStatus, errorThrown) {
+			render_error(jqXHR.responseText);
+		    }
                 });
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                render_error(jqXHR.responseText);
             }
         })};
+
     var undoFn = function() {
         geom_doc.remove(boolNode);
         childNodes.reverse().map(function(x) {
             geom_doc.add(x);
         });
     }
+
     var redoFn = function() {
         childNodes.map(function(x) {
             geom_doc.remove(x);

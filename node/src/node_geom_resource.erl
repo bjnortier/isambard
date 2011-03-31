@@ -84,8 +84,7 @@ malformed_request(ReqData, Context, 'PUT') ->
 			ok ->
 			    {false, ReqData, Context};
 			{error, {validation, ErrorParams}} ->
-			    ReqData1 = wrq:set_resp_body(
-					 mochijson2:encode(ErrorParams), ReqData),
+			    ReqData1 = error_response(ReqData, ErrorParams),
 			    {true, ReqData1, Context}
 		    end;
 		false ->
@@ -103,9 +102,7 @@ malformed_request(ReqData, Context, 'POST') ->
 				 mochijson2:encode({struct, [{<<"path">>, iolist_to_binary(Path)}]}), ReqData),
 		    {false, ReqData1, Context};
 		{error, {validation, ErrorParams}} ->
-		    ReqData1 = wrq:set_resp_body(
-				 mochijson2:encode(ErrorParams), ReqData),
-
+		    ReqData1 = error_response(ReqData, ErrorParams),
 		    {true, ReqData1, Context}
 	    end;
 	false ->
@@ -113,6 +110,12 @@ malformed_request(ReqData, Context, 'POST') ->
 	    {true, ReqData1, Context}
     end.
 
+
+error_response(ReqData, ErrorParams) ->
+    wrq:set_resp_body(
+      mochijson2:encode(
+	{struct, [{<<"validation">>, ErrorParams}]}), 
+      ReqData).
 
 valid_json(Body) ->
     try 

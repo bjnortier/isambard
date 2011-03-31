@@ -45,6 +45,11 @@ body {
     background-color: #000;
 }
 
+#geom-model-doc table tr.validation-error {
+    background-color: #c00;
+}
+
+
 
 #geom-model-doc table tr.selected {
     background-color: #eeee00;

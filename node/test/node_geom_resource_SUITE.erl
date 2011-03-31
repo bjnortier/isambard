@@ -38,7 +38,7 @@ create_update(_Config) ->
     %% Update
     GeomJSONB = {struct, [{<<"type">>, <<"sphere">>},
                           {<<"parameters">>, {struct, [{<<"radius">>, 3.0}]}}]},
-    {ok,{{"HTTP/1.1",204,_}, _, PutResponse}} = 
+    {ok,{{"HTTP/1.1",204,_}, _, _PutResponse}} = 
 	httpc:request(put, {"http://localhost:8001/geom/" ++ GeomId, [], "application/json", iolist_to_binary(mochijson2:encode(GeomJSONB))}, [], []),
     ok.
     
@@ -106,7 +106,7 @@ validation_create(_Config) ->
                           {<<"parameters">>, {struct, [{<<"radius">>, 0.0}]}}]},
     {ok,{{"HTTP/1.1",400,_}, _, PostAResponse}} = 
 	httpc:request(post, {"http://localhost:8001/geom/", [], "application/json", iolist_to_binary(mochijson2:encode(GeomJSONA))}, [], []),
-    {struct, [{<<"radius">>, <<"must be positive">>}]} = mochijson2:decode(PostAResponse),
+    {struct, [{<<"validation">>, {struct, [{<<"radius">>, <<"must be positive">>}]}}]} = mochijson2:decode(PostAResponse),
 
     ok.
 
@@ -125,6 +125,7 @@ validation_update(_Config) ->
                           {<<"parameters">>, {struct, [{<<"radius">>, -0.10}]}}]},
     {ok,{{"HTTP/1.1",400,_}, _, PutResponse}} = 
 	httpc:request(put, {"http://localhost:8001/geom/" ++ GeomId, [], "application/json", iolist_to_binary(mochijson2:encode(GeomJSONB))}, [], []),
-    {struct, [{<<"radius">>, <<"must be positive">>}]} = mochijson2:decode(PutResponse),
+     {struct, [{<<"validation">>, 
+		{struct, [{<<"radius">>, <<"must be positive">>}]}}]} = mochijson2:decode(PutResponse),
 
     ok.
