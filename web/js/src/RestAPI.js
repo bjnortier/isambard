@@ -1,4 +1,15 @@
 
+function render_error(responseText) {
+    var error = JSON.parse(responseText);
+    $('tr.field').removeClass('validation-error');
+    if (error.validation) {
+	for (var i in error.validation) {
+	    $('#' + i).parents('tr.field').addClass('validation-error');
+	}
+    }
+    command_stack.inProgressFailure();
+}
+
 
 function update_geom_command(fromNode, toNode) {
     
@@ -69,16 +80,6 @@ function update_geom_command(fromNode, toNode) {
     }
 
     return new Command(doFn, undoFn, redoFn);
-}
-
-function render_error(responseText) {
-    var error = JSON.parse(responseText);
-    if (error.validation) {
-	for (var i in error.validation) {
-	    $('#' + i).parents('tr.field').addClass('validation-error');
-	}
-    }
-    command_stack.inProgressFailure();
 }
 
 
