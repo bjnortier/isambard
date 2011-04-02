@@ -11,7 +11,7 @@ function renderTransform(geomNode, transformIndex) {
                        });
     }
     
-    var template = '<table><tr><td>{{type}}{{^editing}}<img class="{{delete-class}}" src="/images/delete_button.png" alt="delete"/>{{/editing}}</td></tr><tr><td><table>{{#paramsArr}}<tr><td>{{key}}</td><td>{{^editing}}<span class="{{edit-class}}">{{value}}</span>{{/editing}}{{#editing}}<input id="{{key}}" type="text" value="{{value}}">{{/editing}}</td></tr>{{/paramsArr}}</td></tr></table>{{#editing}}<tr><td><input id="transform-ok" type="submit" value="Ok"/><input id="transform-cancel" type="submit" value="Cancel"/></td></tr>{{/editing}}</table>';
+    var template = '<table><tr><td>{{type}}{{^editing}}<img class="{{delete-class}}" src="/images/delete_button.png" alt="delete"/>{{/editing}}</td></tr><tr><td><table>{{#paramsArr}}<tr {{#editing}}class="field"{{/editing}}><td>{{key}}</td><td>{{^editing}}<span class="{{edit-class}}">{{value}}</span>{{/editing}}{{#editing}}<input id="{{key}}" type="text" value="{{value}}">{{/editing}}</td></tr>{{/paramsArr}}</td></tr></table>{{#editing}}<tr><td><input id="transform-ok" type="submit" value="Ok"/><input id="transform-cancel" type="submit" value="Cancel"/></td></tr>{{/editing}}</table>';
     var transformTable = $.mustache(template, {
         type: transform.type,
         'delete-class': 'delete-transform target-' + id + '-' + transformIndex,

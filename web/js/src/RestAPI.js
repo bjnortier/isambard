@@ -207,3 +207,67 @@ function boolean(type) {
     var cmd = new Command(doFn, undoFn, redoFn);
     command_stack.execute(cmd);
 }
+
+
+function save() {
+    var docId = $.getQueryParam("docid");
+    var rootPaths = geom_doc.rootNodes.filter(function(x) {
+        return !x.editing;
+    }).map(function(x) {
+        return x.path;
+    });
+    console.log(rootPaths);
+    $.ajax({
+        type: 'PUT',
+        url: '/doc/' + docId,
+        contentType: 'application/json',
+        data: JSON.stringify(rootPaths),
+        success: function() {
+            console.log('saved');
+        }
+,
+        error: function(jqXHR, textStatus, errorThrown) {
+            render_error(jqXHR.responseText);
+        }
+    });
+}
+
+function load(docId) {
+    $.ajax({
+        type: 'GET',
+        url: '/doc/' + docId,
+        dataType: 'json',
+        success: function(geomPaths) {
+            geomPaths.map(function(path) {
+                console.log("loading " + path);
+                $.ajax({
+                    type: 'GET',
+                    url: path + '?recursive=true',
+                    dataType: 'json',
+                    success: function(geomJson) {
+                        var newNode = GeomNode.fromDeepJson(geomJson);
+                        $.ajax({
+                            type: 'GET',
+                            url: '/mesh/' + idForGeomPath(path),
+                            success: function(mesh) {
+                                newNode.mesh = mesh;
+                                geom_doc.add(newNode);
+                            },
+			    error: function(jqXHR, textStatus, errorThrown) {
+				render_error(jqXHR.responseText);
+			    }
+                        });
+
+                    },
+		    error: function(jqXHR, textStatus, errorThrown) {
+			render_error(jqXHR.responseText);
+		    }
+                });
+            });
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            render_error(jqXHR.responseText);
+        }
+    });
+
+}

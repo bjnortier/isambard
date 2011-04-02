@@ -7,12 +7,32 @@
 geom({struct, Props}) when is_list(Props) ->
     case lists:keyfind(<<"type">>, 1, Props) of
         {<<"type">>, GeomType} ->
-            validate_type(GeomType, Props);
-        _ ->
-            {error, <<"no type specified">>}
+            GeomResult = validate_geom_type(GeomType, Props),
+	    TransformsResult = 
+		    case lists:keyfind(<<"transforms">>, 1, Props) of
+			{_, Transforms} ->
+			    lists:map(fun transform/1, Transforms);
+			false ->
+			    [ok]
+		    end,
+	    compact_errors([GeomResult|TransformsResult]);
+	_ ->
+	    {error, <<"no type specified">>}
     end;
 geom(_) ->
     {error, <<"invalid geometry">>}.
+
+
+transform({struct, Props}) when is_list(Props) ->
+    case lists:keyfind(<<"type">>, 1, Props) of
+        {<<"type">>, TransformType} ->
+            validate_transform_type(TransformType, Props);
+        _ ->
+            {error, <<"no type specified">>}
+    end;
+transform(_) ->
+    {error, <<"invalid transform">>}.
+    
 
 -ifdef(TEST).
 validate_geom_test_() ->
@@ -22,27 +42,38 @@ validate_geom_test_() ->
 				  {<<"parameters">>, {struct, [
 							       {<<"radius">>, 1.2}
 							      ]}}]})),
+     ?_assertEqual(ok,
+		   geom({struct, [{<<"type">>, <<"union">>},
+				  {<<"children">>, [<<"abc">>, <<"123">>]}]})),
      ?_assertEqual({error, {struct, [{<<"radius">>,<<"must be positive">>}]}},
 		   geom({struct, [{<<"type">>, <<"sphere">>},
 				  {<<"parameters">>, {struct, [
 							       {<<"radius">>, -0.3}
 							      ]}}]})),
-     ?_assertEqual(ok,
-		   geom({struct, [{<<"type">>, <<"union">>},
-				  {<<"children">>, [<<"abc">>, <<"123">>]}]}))
+     ?_assertEqual({error, {struct, [{<<"factor">>,<<"must be positive">>}]}},
+		   geom({struct, [{<<"type">>, <<"sphere">>},
+				  {<<"parameters">>, {struct, [
+							       {<<"radius">>, 3}
+							      ]}},
+				  {<<"transforms">>,
+				   [{struct, [{<<"type">>, <<"scale">>},
+					      {<<"parameters">>, {struct, [{<<"x">>, 0.0},
+									   {<<"y">>, 3},
+									   {<<"z">>, 0.0},
+									   {<<"factor">>, <<"a">>}]}}]}]}]}))
+
     ].
 -endif.
 
 
-
-validate_type(<<"sphere">>, Props) ->
+validate_geom_type(<<"sphere">>, Props) ->
     case lists:keyfind(<<"parameters">>, 1, Props) of
 	false ->
 	    {error, <<"no parameters specified">>};
 	{_, Parameters} ->
 	    validate_parameters(Parameters, [{<<"radius">>, fun positive/1}])
     end;
-validate_type(<<"cuboid">>, Props) ->
+validate_geom_type(<<"cuboid">>, Props) ->
     case lists:keyfind(<<"parameters">>, 1, Props) of
 	false ->
 	    {error, <<"no parameters specified">>};
@@ -52,7 +83,7 @@ validate_type(<<"cuboid">>, Props) ->
 					     {<<"height">>, fun positive/1}
 					    ])
     end;
-validate_type(<<"cylinder">>, Props) ->
+validate_geom_type(<<"cylinder">>, Props) ->
     case lists:keyfind(<<"parameters">>, 1, Props) of
 	false ->
 	    {error, <<"no parameters specified">>};
@@ -61,13 +92,23 @@ validate_type(<<"cylinder">>, Props) ->
 					     {<<"height">>, fun positive/1}
 					    ])
     end;
-validate_type(<<"union">>, Props) ->
+validate_geom_type(<<"cone">>, Props) ->
+    case lists:keyfind(<<"parameters">>, 1, Props) of
+	false ->
+	    {error, <<"no parameters specified">>};
+	{_, Parameters} ->
+	    validate_parameters(Parameters, [{<<"top_radius">>, fun positive/1},
+					     {<<"bottom_radius">>, fun positive/1},
+					     {<<"height">>, fun positive/1}
+					    ])
+    end;
+validate_geom_type(<<"union">>, Props) ->
     validate_boolean(Props);
-validate_type(<<"subtract">>, Props) ->
+validate_geom_type(<<"subtract">>, Props) ->
     validate_boolean(Props);
-validate_type(<<"intersect">>, Props) ->
+validate_geom_type(<<"intersect">>, Props) ->
     validate_boolean(Props);
-validate_type(_, _) ->
+validate_geom_type(_, _) ->
     {error, <<"unknown geometry type">>}.
 
 validate_boolean(Props) ->
@@ -81,35 +122,70 @@ validate_boolean(Props) ->
     end.
 
     
-
-
-
 -ifdef(TEST).
-validate_type_test_() ->
+validate_geom_type_test_() ->
     [
      ?_assertEqual(
         ok, 
-        validate_type(<<"sphere">>, [{<<"parameters">>, 
-				      {struct, [{<<"radius">>, 0.1}]}}])),
+        validate_geom_type(<<"sphere">>, [{<<"parameters">>, 
+					   {struct, [{<<"radius">>, 0.1}]}}])),
      ?_assertEqual(
         {error, {struct, [{<<"radius">>, <<"not found">>}]}}, 
-        validate_type(<<"sphere">>, [{<<"parameters">>, 
-				      {struct, []}}])),
+        validate_geom_type(<<"sphere">>, [{<<"parameters">>, 
+					   {struct, []}}])),
      ?_assertEqual(
         {error, {struct, [{<<"radius">>, <<"must be positive">>}]}}, 
-        validate_type(<<"sphere">>, [{<<"parameters">>, 
-				      {struct, [{<<"radius">>, -4}]}}])),
+        validate_geom_type(<<"sphere">>, [{<<"parameters">>, 
+					   {struct, [{<<"radius">>, -4}]}}])),
      ?_assertEqual(
         {error, {struct, [{<<"width">>, <<"must be positive">>},
 			  {<<"height">>, <<"must be positive">>}]}}, 
-        validate_type(<<"cuboid">>, [{<<"parameters">>,
-				      {struct, [{<<"height">>, -4},
-						{<<"depth">>, 3.1},
-						{<<"width">>, -0.1}
-					       ]}}]))
+        validate_geom_type(<<"cuboid">>, [{<<"parameters">>,
+					   {struct, [{<<"height">>, -4},
+						     {<<"depth">>, 3.1},
+						     {<<"width">>, -0.1}
+						    ]}}]))
     ].
 -endif.
 
+validate_transform_type(<<"scale">>, Props) ->
+    case lists:keyfind(<<"parameters">>, 1, Props) of
+	false ->
+	    {error, <<"no parameters specified">>};
+	{_, Parameters} ->
+	    validate_parameters(Parameters, [{<<"x">>, fun number/1},
+					     {<<"y">>, fun number/1},
+					     {<<"z">>, fun number/1},
+					     {<<"factor">>, fun positive/1}
+					    ])
+    end;
+validate_transform_type(_, _) ->
+    {error, <<"unknown transform type">>}.
+
+
+-ifdef(TEST).
+validate_transform_type_test_() ->
+    [
+     ?_assertEqual(
+        ok, 
+        validate_transform_type(<<"scale">>, [{<<"parameters">>, 
+						{struct, [{<<"x">>, 0.1},
+							  {<<"y">>, 0},
+							  {<<"z">>, -5},
+							  {<<"factor">>, 2}
+							 ]}}])),
+     ?_assertEqual(
+        {error, {struct, [{<<"y">>, <<"must be a number">>},
+			  {<<"factor">>, <<"must be positive">>}
+			 ]}}, 
+        validate_transform_type(<<"scale">>, [{<<"parameters">>, 
+						{struct, [{<<"x">>, 0.1},
+							  {<<"y">>, <<"a">>},
+							  {<<"z">>, -5},
+							  {<<"factor">>, -0.1}
+							 ]}}]))
+    ].
+-endif.
 
 validate_parameters(Parameters, Specs) ->
     Errors = lists:foldr(fun(Spec, Acc) ->
@@ -184,6 +260,17 @@ positive(Value) when is_float(Value) andalso Value > 0 ->
 positive(_) ->
     {error, <<"must be positive">>}.
 
+positive_integer(Value) when is_integer(Value) andalso Value > 0 ->
+    ok;
+positive_integer(_) ->
+    {error, <<"must be a positive integer">>}.
+
+number(Value) when is_integer(Value) orelse is_float(Value) ->
+    ok;
+number(_) ->
+    {error, <<"must be a number">>}.
+
+
 
 -ifdef(TEST).
 validate_spec_test_() ->
@@ -193,12 +280,39 @@ validate_spec_test_() ->
      ?_assertEqual({<<"a">>, <<"must be positive">>}, 
                    validate_spec({struct, [{<<"a">>, 0}]}, {<<"a">>, fun positive/1})),
      ?_assertEqual({<<"a">>, <<"not found">>}, 
-                   validate_spec({struct, []}, {<<"a">>, fun positive/1}))
+                   validate_spec({struct, []}, {<<"a">>, fun positive/1})),
+     ?_assertEqual({<<"a">>, <<"must be a positive integer">>}, 
+                   validate_spec({struct, [{<<"a">>, 0}]}, {<<"a">>, fun positive_integer/1})),
+     ?_assertEqual({<<"a">>, <<"must be a number">>}, 
+                   validate_spec({struct, [{<<"a">>, <<"x">>}]}, {<<"a">>, fun number/1}))
     ].
 -endif.
 
-    
 
+compact_errors(Results) ->
+    CompactedProps = lists:foldl(fun(ok, Acc) ->
+					 Acc;
+				    ({error, {struct, Props}}, Acc) ->
+					 Acc ++ Props
+				 end,
+				 [],
+				 Results),
+    case CompactedProps of
+	[] ->
+	    ok;
+	_ ->
+	    {error, {struct, CompactedProps}}
+    end.
+
+    
+-ifdef(TEST).
+compact_errors_test_() ->
+    [
+     ?_assertEqual(ok, compact_errors([ok, ok, ok, ok])),
+     ?_assertEqual({error, {struct, [x, y]}}, 
+		   compact_errors([ok, {error, {struct, [x]}}, ok, {error, {struct, [y]}}]))
+    ].
+-endif.
 
     
 
