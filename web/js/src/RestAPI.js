@@ -7,6 +7,13 @@ function render_error(responseText) {
 	    $('#' + i).parents('tr.field').addClass('validation-error');
 	}
     }
+    $('#messages-container').empty();
+    if (error.validation) {
+	// No need for a message as there is already validation feedback
+	console.log(error);
+    } else {
+	$('#messages-container').append('<div class="message">Oops. An unknown problem occurred</div>');
+    }
     command_stack.inProgressFailure();
 }
 

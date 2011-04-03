@@ -69,6 +69,7 @@ function CommandStack() {
     this.inProgressSuccess = function() {
         console.log("command in progress success");
         successFn();
+	$('#messages-container').empty();
         hideSpinner();
     }
 
