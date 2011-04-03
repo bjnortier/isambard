@@ -17,10 +17,10 @@ geom({struct, Props}) when is_list(Props) ->
 		    end,
 	    compact_errors([GeomResult|TransformsResult]);
 	_ ->
-	    {error, <<"no type specified">>}
+	    {error, {struct, [{<<"missing">>, <<"geometry type">>}]}}
     end;
 geom(_) ->
-    {error, <<"invalid geometry">>}.
+    {error, {struct, [{<<"invalid">>, <<"geometry">>}]}}.
 
 
 transform({struct, Props}) when is_list(Props) ->
@@ -28,10 +28,10 @@ transform({struct, Props}) when is_list(Props) ->
         {<<"type">>, TransformType} ->
             validate_transform_type(TransformType, Props);
         _ ->
-            {error, <<"no type specified">>}
+            {error, {struct, [{<<"missing">>, <<"tranform type">>}]}}
     end;
 transform(_) ->
-    {error, <<"invalid transform">>}.
+    {error, {struct, [{<<"invalid">>, <<"transform">>}]}}.
     
 
 -ifdef(TEST).
@@ -67,41 +67,38 @@ validate_geom_test_() ->
 
 
 validate_geom_type(<<"sphere">>, Props) ->
-    case lists:keyfind(<<"parameters">>, 1, Props) of
-	false ->
-	    {error, <<"no parameters specified">>};
-	{_, Parameters} ->
-	    validate_parameters(Parameters, [{<<"radius">>, fun positive/1}])
-    end;
+    validate_primitive(Props, [
+			       {<<"radius">>, fun positive/1}
+			      ]);
 validate_geom_type(<<"cuboid">>, Props) ->
-    case lists:keyfind(<<"parameters">>, 1, Props) of
-	false ->
-	    {error, <<"no parameters specified">>};
-	{_, Parameters} ->
-	    validate_parameters(Parameters, [{<<"width">>, fun positive/1},
-					     {<<"depth">>, fun positive/1},
-					     {<<"height">>, fun positive/1}
-					    ])
-    end;
+    validate_primitive(Props, [
+			       {<<"width">>, fun positive/1},
+			       {<<"depth">>, fun positive/1},
+			       {<<"height">>, fun positive/1}
+			      ]);
 validate_geom_type(<<"cylinder">>, Props) ->
-    case lists:keyfind(<<"parameters">>, 1, Props) of
-	false ->
-	    {error, <<"no parameters specified">>};
-	{_, Parameters} ->
-	    validate_parameters(Parameters, [{<<"radius">>, fun positive/1},
-					     {<<"height">>, fun positive/1}
-					    ])
-    end;
+    validate_primitive(Props, [
+			       {<<"radius">>, fun positive/1},
+			       {<<"height">>, fun positive/1}
+			      ]);
 validate_geom_type(<<"cone">>, Props) ->
-    case lists:keyfind(<<"parameters">>, 1, Props) of
-	false ->
-	    {error, <<"no parameters specified">>};
-	{_, Parameters} ->
-	    validate_parameters(Parameters, [{<<"top_radius">>, fun positive/1},
-					     {<<"bottom_radius">>, fun positive/1},
-					     {<<"height">>, fun positive/1}
-					    ])
-    end;
+    validate_primitive(Props, [
+			       {<<"top_radius">>, fun positive/1},
+			       {<<"bottom_radius">>, fun positive/1},
+			       {<<"height">>, fun positive/1}
+			      ]);
+validate_geom_type(<<"wedge">>, Props) ->
+    validate_primitive(Props, [
+			       {<<"x1">>, fun positive/1},
+			       {<<"x2">>, fun positive_or_zero/1},
+			       {<<"y">>, fun positive/1},
+			       {<<"z">>, fun positive/1}
+			      ]);
+validate_geom_type(<<"torus">>, Props) ->
+    validate_primitive(Props, [
+			       {<<"r1">>, fun positive/1},
+			       {<<"r2">>, fun positive/1}
+			      ]);
 validate_geom_type(<<"union">>, Props) ->
     validate_boolean(Props);
 validate_geom_type(<<"subtract">>, Props) ->
@@ -109,16 +106,24 @@ validate_geom_type(<<"subtract">>, Props) ->
 validate_geom_type(<<"intersect">>, Props) ->
     validate_boolean(Props);
 validate_geom_type(_, _) ->
-    {error, <<"unknown geometry type">>}.
+    {error, {struct, [{<<"invalid">>, <<"unknown geometry type">>}]}}.
+
+validate_primitive(Props, Specs) ->
+    case lists:keyfind(<<"parameters">>, 1, Props) of
+	false ->
+	    {error, {struct, [{<<"missing">>, <<"parameters">>}]}};
+	{_, Parameters} ->
+	    validate_parameters(Parameters, Specs)
+    end.
 
 validate_boolean(Props) ->
     case lists:keyfind(<<"children">>, 1, Props) of
 	false ->
-	    {error, <<"no children specified">>};
+	    {error, {struct, [{<<"missing">>, <<"children">>}]}};
 	{_, Children} when is_list(Children) ->
 	    ok;
 	_ ->
-	    {error, <<"invalid children">>}
+	    {error, {struct, [{<<"invalid">>, <<"children">>}]}}
     end.
 
     
@@ -148,19 +153,74 @@ validate_geom_type_test_() ->
     ].
 -endif.
 
+validate_transform_type(<<"translate">>, Props) ->
+    validate_transform_parameters(Props, [{<<"dx">>, fun number/1},
+					  {<<"dy">>, fun number/1},
+					  {<<"dz">>, fun number/1}
+					 ]);
 validate_transform_type(<<"scale">>, Props) ->
+    validate_transform_parameters(Props, [{<<"x">>, fun number/1},
+					  {<<"y">>, fun number/1},
+					  {<<"z">>, fun number/1},
+					  {<<"factor">>, fun positive/1}
+					 ]);
+validate_transform_type(<<"mirror">>, Props) ->
+    validate_transform_parameters(Props, [
+					  {<<"px">>, fun number/1},
+					  {<<"py">>, fun number/1},
+					  {<<"pz">>, fun number/1},
+					  {<<"vx">>, fun number/1},
+					  {<<"vy">>, fun number/1},
+					  {<<"vz">>, fun number/1}
+					 ]);
+validate_transform_type(<<"rotate">>, Props) ->
+    validate_transform_parameters(Props, [
+					  {<<"px">>, fun number/1},
+					  {<<"py">>, fun number/1},
+					  {<<"pz">>, fun number/1},
+					  {<<"vx">>, fun number/1},
+					  {<<"vy">>, fun number/1},
+					  {<<"vz">>, fun number/1},
+					  {<<"angle">>, fun positive/1}
+					 ]);
+validate_transform_type(<<"copy_translate">>, Props) ->
+    validate_transform_parameters(Props, [{<<"dx">>, fun number/1},
+					  {<<"dy">>, fun number/1},
+					  {<<"dz">>, fun number/1},
+					  {<<"n">>, fun positive_integer/1}
+					 ]);
+validate_transform_type(<<"copy_rotate">>, Props) ->
+    validate_transform_parameters(Props, [
+					  {<<"px">>, fun number/1},
+					  {<<"py">>, fun number/1},
+					  {<<"pz">>, fun number/1},
+					  {<<"vx">>, fun number/1},
+					  {<<"vy">>, fun number/1},
+					  {<<"vz">>, fun number/1},
+					  {<<"angle">>, fun positive/1},
+					  {<<"n">>, fun positive_integer/1}
+					 ]);
+validate_transform_type(<<"copy_mirror">>, Props) ->
+    validate_transform_parameters(Props, [
+					  {<<"px">>, fun number/1},
+					  {<<"py">>, fun number/1},
+					  {<<"pz">>, fun number/1},
+					  {<<"vx">>, fun number/1},
+					  {<<"vy">>, fun number/1},
+					  {<<"vz">>, fun number/1}
+					 ]);
+validate_transform_type(_, _) ->
+    {error, {struct, [{<<"invalid">>, <<"transform">>}]}}.
+
+validate_transform_parameters(Props, Specs) ->
     case lists:keyfind(<<"parameters">>, 1, Props) of
 	false ->
-	    {error, <<"no parameters specified">>};
+	    {error, {struct, [{<<"missing">>, <<"parameters">>}]}};
 	{_, Parameters} ->
-	    validate_parameters(Parameters, [{<<"x">>, fun number/1},
-					     {<<"y">>, fun number/1},
-					     {<<"z">>, fun number/1},
-					     {<<"factor">>, fun positive/1}
-					    ])
-    end;
-validate_transform_type(_, _) ->
-    {error, <<"unknown transform type">>}.
+	    validate_parameters(Parameters, Specs)
+    end.
+
+    
 
 
 -ifdef(TEST).
@@ -259,6 +319,14 @@ positive(Value) when is_float(Value) andalso Value > 0 ->
     ok;
 positive(_) ->
     {error, <<"must be positive">>}.
+
+positive_or_zero(Value) when is_integer(Value) andalso Value >= 0 ->
+    ok;
+positive_or_zero(Value) when is_float(Value) andalso Value >= 0 ->
+    ok;
+positive_or_zero(_) ->
+    {error, <<"must be positive">>}.
+
 
 positive_integer(Value) when is_integer(Value) andalso Value > 0 ->
     ok;
