@@ -1,3 +1,15 @@
+function renderErrorMessage(error) {
+    $('#messages-container').empty();
+    if (error.validation) {
+	// No need for a message as there is already validation feedback
+	console.log(error);
+    } else if (error.string) {
+	$('#messages-container').append('<div class="message">' + error.string + '</div>');
+    } else {
+	$('#messages-container').append('<div class="message">Oops. An unknown problem occurred</div>');
+    }
+}
+
 
 function Command(doFn, undoFn, redoFn) {
     var doFn = doFn;
@@ -25,25 +37,27 @@ function CommandStack() {
     }
 
     this.undo = function() {
-        if (last_executed_index < 0) {
-            throw Error('Undo past beginning');
-        }
+	if (!this.canUndo()) {
+	    renderErrorMessage({string:"Nothing to undo"});
+	    return;
+	}
         showSpinner();
-        commands[last_executed_index].undo();
         successFn = function() {
             last_executed_index -= 1;
         }
+        commands[last_executed_index].undo();
     }
 
     this.redo = function() {
-        if (last_executed_index + 1 > commands.length - 1) {
-            throw Error('Redo past end');
-        }
+	if (!this.canRedo()) {
+	    renderErrorMessage({string:"Nothing to redo"});
+	    return;
+	}
         showSpinner();
-        commands[last_executed_index + 1].redo();
         successFn = function() {
             last_executed_index += 1;
         }
+        commands[last_executed_index + 1].redo();
     };
 
     this.canUndo = function() {
@@ -73,8 +87,9 @@ function CommandStack() {
         hideSpinner();
     }
 
-    this.inProgressFailure = function() {
-        console.log("command in progress failure");
+    this.inProgressFailure = function(error) {
+        console.log("command in progress failure: " + JSON.stringify(error));
+	renderErrorMessage(error);
         hideSpinner();
     }
     

@@ -1,5 +1,5 @@
 
-function render_error(responseText) {
+function error_response(responseText) {
     var error = JSON.parse(responseText);
     $('tr.field').removeClass('validation-error');
     if (error.validation) {
@@ -7,14 +7,7 @@ function render_error(responseText) {
 	    $('#' + i).parents('tr.field').addClass('validation-error');
 	}
     }
-    $('#messages-container').empty();
-    if (error.validation) {
-	// No need for a message as there is already validation feedback
-	console.log(error);
-    } else {
-	$('#messages-container').append('<div class="message">Oops. An unknown problem occurred</div>');
-    }
-    command_stack.inProgressFailure();
+    command_stack.inProgressFailure(error);
 }
 
 
@@ -55,14 +48,14 @@ function update_geom_command(fromNode, toNode) {
 				command_stack.inProgressSuccess();
                             },
 			    error: function(jqXHR, textStatus, errorThrown) {
-				render_error(jqXHR.responseText);
+				error_response(jqXHR.responseText);
 			    }
 
                         });
                     }
                 },
 		error: function(jqXHR, textStatus, errorThrown) {
-		    render_error(jqXHR.responseText);
+		    error_response(jqXHR.responseText);
                 }
             });
         }
@@ -120,20 +113,22 @@ function create_geom_command(prototype, geometry) {
                         command_stack.inProgressSuccess();
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
-			render_error(jqXHR.responseText);
+			error_response(jqXHR.responseText);
                     }
                 });
             },
             error: function(jqXHR, textStatus, errorThrown) {
-                render_error(jqXHR.responseText);
+                error_response(jqXHR.responseText);
             }
         });
     };
     var undoFn = function() {
         geom_doc.remove(geomNode);
+	command_stack.inProgressSuccess();
     }
     var redoFn = function() {
         geom_doc.add(geomNode);
+	command_stack.inProgressSuccess();
     }
 
     return new Command(doFn, undoFn, redoFn);
@@ -188,12 +183,12 @@ function boolean(type) {
 			command_stack.inProgressSuccess();
                     },
 		    error: function(jqXHR, textStatus, errorThrown) {
-			render_error(jqXHR.responseText);
+			error_response(jqXHR.responseText);
 		    }
                 });
             },
             error: function(jqXHR, textStatus, errorThrown) {
-                render_error(jqXHR.responseText);
+                error_response(jqXHR.responseText);
             }
         })};
 
@@ -202,6 +197,7 @@ function boolean(type) {
         childNodes.reverse().map(function(x) {
             geom_doc.add(x);
         });
+	command_stack.inProgressSuccess();
     }
 
     var redoFn = function() {
@@ -209,6 +205,7 @@ function boolean(type) {
             geom_doc.remove(x);
         });
         geom_doc.add(boolNode);
+	command_stack.inProgressSuccess();
     }
 
     var cmd = new Command(doFn, undoFn, redoFn);
@@ -234,7 +231,7 @@ function save() {
         }
 ,
         error: function(jqXHR, textStatus, errorThrown) {
-            render_error(jqXHR.responseText);
+            error_response(jqXHR.responseText);
         }
     });
 }
@@ -261,19 +258,19 @@ function load(docId) {
                                 geom_doc.add(newNode);
                             },
 			    error: function(jqXHR, textStatus, errorThrown) {
-				render_error(jqXHR.responseText);
+				error_response(jqXHR.responseText);
 			    }
                         });
 
                     },
 		    error: function(jqXHR, textStatus, errorThrown) {
-			render_error(jqXHR.responseText);
+			error_response(jqXHR.responseText);
 		    }
                 });
             });
         },
         error: function(jqXHR, textStatus, errorThrown) {
-            render_error(jqXHR.responseText);
+            error_response(jqXHR.responseText);
         }
     });
 
