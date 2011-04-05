@@ -1,4 +1,10 @@
 var command_stack = new CommandStack();
+window.addEventListener("popstate", function(e) {
+    if (e.state != null) {
+	command_stack.popState(e.state);
+    }
+});
+
 var geom_doc = new GeomDocument();
 var treeView = new TreeView();
 

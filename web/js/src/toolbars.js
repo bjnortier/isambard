@@ -17,14 +17,6 @@ function Action(label, iconPath, fn) {
     }
 }
 
-function undo() {
-    command_stack.undo();
-}
-
-function redo() {
-    command_stack.redo();
-}
-
 function delete_geom() {
     var selected = selectionManager.selected();
     selectionManager.deselectAll();
@@ -78,10 +70,6 @@ $(document).ready(function() {
                function(parameters) { save(); }).render($("#edit"));
     new Action("delete", "images/trash.png", 
                function(parameters) { delete_geom(); }).render($("#edit"));
-    new Action("undo", "images/undo.png", 
-               function(parameters) { undo(); }).render($("#edit"));
-    new Action("redo", "images/redo.png", 
-               function(parameters) { redo(); }).render($("#edit"));
     $('#edit').append('<a id="action_stl" href=""><img src="images/stl.png" alt="stl"></img></a>');
 
 
