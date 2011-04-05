@@ -15,7 +15,10 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.48.0 r9654"
-   sodipodi:docname="toolbar_buttons.svg">
+   sodipodi:docname="toolbar_buttons.svg"
+   inkscape:export-filename="/Users/bjnortier/development/isambard/web/images/save.png"
+   inkscape:export-xdpi="10.838273"
+   inkscape:export-ydpi="10.838273">
   <sodipodi:namedview
      id="base"
      pagecolor="#000000"
@@ -23,20 +26,20 @@
      borderopacity="1.0"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.4"
-     inkscape:cx="710.7387"
-     inkscape:cy="2719.8016"
+     inkscape:zoom="0.175"
+     inkscape:cx="175.44803"
+     inkscape:cy="1515.7406"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
      inkscape:window-width="1309"
      inkscape:window-height="816"
-     inkscape:window-x="1674"
-     inkscape:window-y="41"
+     inkscape:window-x="15"
+     inkscape:window-y="0"
      inkscape:window-maximized="0">
     <inkscape:grid
        snapvisiblegridlinesonly="true"
-       enabled="true"
+       enabled="false"
        visible="true"
        empspacing="5"
        id="grid2985"
@@ -562,9 +565,9 @@
     <rect
        inkscape:export-ydpi="10.838273"
        inkscape:export-xdpi="10.838273"
-       inkscape:export-filename="/Users/bjnortier/development/isambard/node/priv/web/images/copy_translate.png"
-       y="-1321.5034"
-       x="33.612904"
+       inkscape:export-filename="/Users/bjnortier/development/isambard/web/images/save.png"
+       y="-1755.1146"
+       x="-1292.437"
        height="327.73111"
        width="327.73111"
        id="rect3969-4-3-9-6"
@@ -1168,7 +1171,7 @@
          style="fill:none;stroke:#ffffff;stroke-width:5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:20, 5;stroke-dashoffset:0" />
     </g>
     <rect
-       style="fill:#ffffff;fill-opacity:0.23181818000000001;stroke:none;stroke-width:5;stroke-linecap:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       style="fill:#ffffff;fill-opacity:0.23181817;stroke:none"
        id="rect4224"
        width="380"
        height="200"
@@ -1214,7 +1217,7 @@
     </g>
     <g
        id="g4232"
-       style="stroke-width:30;stroke-miterlimit:4;stroke-dasharray:none;stroke:#ffffff;stroke-opacity:1;stroke-linecap:round"
+       style="stroke:#ffffff;stroke-width:30;stroke-linecap:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        inkscape:export-filename="/Users/bjnortier/development/isambard/node/priv/web/images/delete_button.png"
        inkscape:export-xdpi="4.5"
        inkscape:export-ydpi="4.5">
@@ -1230,6 +1233,53 @@
          d="m 1000,-1587.6378 -160,-160"
          style="fill:none;stroke:#ffffff;stroke-width:30;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
          sodipodi:nodetypes="cc" />
+    </g>
+    <g
+       id="g4647"
+       inkscape:export-filename="/Users/bjnortier/development/isambard/web/images/save.png"
+       inkscape:export-xdpi="10.838273"
+       inkscape:export-ydpi="10.838273">
+      <rect
+         inkscape:export-ydpi="8.8019562"
+         inkscape:export-xdpi="8.8019562"
+         inkscape:export-filename="/Users/bjnortier/development/isambard/web/images/save.png"
+         ry="22.897064"
+         y="-1694.082"
+         x="-1253.4645"
+         height="245.62303"
+         width="249.78615"
+         id="rect3783"
+         style="fill:none;stroke:#00e81c;stroke-width:10.9281435;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <rect
+         inkscape:export-ydpi="8.8019562"
+         inkscape:export-xdpi="8.8019562"
+         inkscape:export-filename="/Users/bjnortier/development/isambard/web/images/save.png"
+         ry="22.897064"
+         y="-1693.8217"
+         x="-1226.6971"
+         height="132.28833"
+         width="193.85474"
+         id="rect3783-5"
+         style="fill:none;stroke:#00e81c;stroke-width:7.285429;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;display:inline" />
+      <rect
+         inkscape:export-ydpi="8.8019562"
+         inkscape:export-xdpi="8.8019562"
+         inkscape:export-filename="/Users/bjnortier/development/isambard/web/images/save.png"
+         ry="22.897064"
+         y="-1507.7158"
+         x="-1182.1631"
+         height="60.166153"
+         width="109.95739"
+         id="rect3783-2"
+         style="fill:none;stroke:#00e81c;stroke-width:7.285429;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;display:inline" />
+      <path
+         inkscape:export-ydpi="8.8019562"
+         inkscape:export-xdpi="8.8019562"
+         inkscape:export-filename="/Users/bjnortier/development/isambard/web/images/save.png"
+         inkscape:connector-curvature="0"
+         id="path4634"
+         d="m -1172.4542,-1735.8605 0,67.7065 -22.0782,0 64.7627,64.7627 66.2345,-66.2346 -23.5501,0 0,-66.2346 z"
+         style="fill:#baffbb;fill-opacity:1;stroke:#48fb56;stroke-width:7.285429;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
     </g>
   </g>
 </svg>

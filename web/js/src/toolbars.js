@@ -5,7 +5,7 @@ function Action(label, iconPath, fn) {
 
     this.render = function(toolbar) {
 
-        var imgId = "action_" + label;
+        var imgId = "action_" + label.toLowerCase().replace(' ', '_');
         toolbar.append('<img id="' + imgId + '" src="' + this.iconPath + '" title="' + label + '"/>');
         
         // Because 'this' is the HTML element inside the function below,
