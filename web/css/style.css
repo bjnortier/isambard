@@ -123,8 +123,6 @@ body {
     top: 140px;
 }
 
-
-
 #transforms {
     position:absolute;
     left:20px;
@@ -137,9 +135,8 @@ body {
     top:260px;
 }
 
-
 .toolbar {
-    background-color: #666;
+    /*background-color: #666;*/
     padding: 5px;
     border-radius: 5px;
     opacity: 0.75;

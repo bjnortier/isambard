@@ -6,7 +6,7 @@ function Action(label, iconPath, fn) {
     this.render = function(toolbar) {
 
         var imgId = "action_" + label;
-        toolbar.append('<img id="' + imgId + '" src="' + this.iconPath + '"/>');
+        toolbar.append('<img id="' + imgId + '" src="' + this.iconPath + '" title="' + label + '"/>');
         
         // Because 'this' is the HTML element inside the function below,
         // we have to use a reference
@@ -66,11 +66,11 @@ $(document).ready(function() {
     /*
      * Basic
      */
-    new Action("save", "images/save.png", 
+    new Action("Save", "images/save.png", 
                function(parameters) { save(); }).render($("#edit"));
-    new Action("delete", "images/trash.png", 
+    new Action("Delete", "images/trash.png", 
                function(parameters) { delete_geom(); }).render($("#edit"));
-    $('#edit').append('<a id="action_stl" href=""><img src="images/stl.png" alt="stl"></img></a>');
+    $('#edit').append('<a id="action_stl" href=""><img src="images/stl.png" alt="stl" title="Export to STL"></img></a>');
 
 
     $('#action_stl').click(function() {
@@ -82,49 +82,49 @@ $(document).ready(function() {
     /*
      * Primitives
      */
-    new Action("cuboid", "/images/cuboid.png", 
+    new Action("Cuboid", "/images/cuboid.png", 
                function() { create_primitive("cuboid",  ["width", "depth", "height"]); }).render($("#primitives"));
-    new Action("sphere", "/images/sphere.png", 
+    new Action("Sphere", "/images/sphere.png", 
                function(parameters) { create_primitive("sphere", ["radius"]); }).render($("#primitives"));
-    new Action("cylinder", "/images/cylinder.png", 
+    new Action("Cylinder", "/images/cylinder.png", 
                function(parameters) { create_primitive("cylinder", ["radius", "height"]); }).render($("#primitives"));
-    new Action("cone", "/images/cone.png", 
+    new Action("Cone", "/images/cone.png", 
                function(parameters) { create_primitive("cone", ["bottom_radius", "top_radius", "height"]); }).render($("#primitives"));
-     new Action("wedge", "/images/wedge.png", 
+     new Action("Wedge", "/images/wedge.png", 
                 function(parameters) { create_primitive("wedge", ["x1", "x2", "y", "z"]); }).render($("#primitives"));
-    new Action("torus", "/images/torus.png", 
+    new Action("Torus", "/images/torus.png", 
                function(parameters) { create_primitive("torus", ["r1", "r2"]); }).render($("#primitives"));
 
     /*
      * Booleans
      */
-    new Action("union", "/images/union.png", 
+    new Action("Union", "/images/union.png", 
                function(parameters) { boolean("union"); }).render($("#boolean"));
-    new Action("subtract", "/images/diff.png", 
+    new Action("Subtract", "/images/diff.png", 
                function(parameters) { boolean("subtract"); }).render($("#boolean"));
-    new Action("intersect", "/images/intersect.png", 
+    new Action("Intersect", "/images/intersect.png", 
                function(parameters) { boolean("intersect"); }).render($("#boolean"));
     
     /*
      * Transformations
      */
-    new Action("translate", "/images/translate.png", 
+    new Action("Translate", "/images/translate.png", 
                function(parameters) { create_transform("translate", ["dx", "dy", "dz"]); }).render($("#transforms"));
-    new Action("scale", "/images/scale.png", 
+    new Action("Scale", "/images/scale.png", 
                function(parameters) { create_transform("scale", ["x", "y", "z", "factor"]); }).render($("#transforms"));
-    new Action("rotate", "/images/rotate.png", 
+    new Action("Rotate", "/images/rotate.png", 
                function(parameters) { create_transform("rotate", ["px", "py", "pz", "vx", "vy", "vz", "angle"]); }).render($("#transforms"));
-    new Action("mirror", "/images/mirror.png", 
+    new Action("Mirror", "/images/mirror.png", 
                function(parameters) { create_transform("mirror", ["px", "py", "pz", "vx", "vy", "vz"]); }).render($("#transforms"));
 
     /*
      * Copy & Transform
      */
-    new Action("copy_translate", "/images/copy_translate.png", 
+    new Action("Copy Translate", "/images/copy_translate.png", 
                function(parameters) { create_transform("copy_translate", ["dx", "dy", "dz", "n"]); }).render($("#copy_transforms"));
-    new Action("copy_rotate", "/images/copy_rotate.png", 
+    new Action("Copy Rotate", "/images/copy_rotate.png", 
                function(parameters) { create_transform("copy_rotate", ["px", "py", "pz", "vx", "vy", "vz", "angle", "n"]); }).render($("#copy_transforms"));
-    new Action("copy_mirror", "/images/copy_mirror.png", 
+    new Action("Copy Mirror", "/images/copy_mirror.png", 
                function(parameters) { create_transform("copy_mirror", ["px", "py", "pz", "vx", "vy", "vz"]); }).render($("#copy_transforms"));
 
 
