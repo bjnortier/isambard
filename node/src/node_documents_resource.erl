@@ -6,14 +6,13 @@
 	 provide_content/2,
 	 post_is_create/2,
          process_post/2,
-	 resource_exists/2,
-         malformed_request/2
+	 resource_exists/2
         ]).
 
 
 -include_lib("webmachine/include/webmachine.hrl").
 
--record(context, {id}).
+-record(context, {}).
 
 init([]) -> {ok, #context{}}.
 
@@ -25,8 +24,7 @@ resource_exists(ReqData, Context) ->
         'POST' ->
             {true, ReqData, Context};
         'GET' ->
-            Exists = node_document_db:exists(Context#context.id),
-            {Exists, ReqData, Context}
+            {true, ReqData, Context}
     end.
 
 content_types_provided(ReqData, Context) ->
@@ -46,16 +44,4 @@ process_post(ReqData, Context) ->
     ReqData1 = wrq:set_resp_body("{\"path\": \"/doc/" ++ Id ++ "\"}", ReqData),
     {true, ReqData1, Context}.
 
-malformed_request(ReqData, Context) ->
-    Method = wrq:method(ReqData),
-    malformed_request(ReqData, Context, Method).
 
-malformed_request(ReqData, Context, 'GET') ->
-    case wrq:path_info(id, ReqData) of
-        undefined ->
-            {true, wrq:set_resp_body("missing id: /doc/<id>", ReqData), Context};
-        Id when is_list(Id) ->
-            {false, ReqData, Context#context{id = Id}}
-    end;
-malformed_request(ReqData, Context, 'POST') ->
-    {false, ReqData, Context}.

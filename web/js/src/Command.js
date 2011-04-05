@@ -11,12 +11,12 @@ function renderErrorMessage(error) {
 }
 
 
-function Command(doFn, undoFn, redoFn) {
-    var doFn = doFn;
+function Command(executeFn, undoFn, redoFn) {
+    var executeFn = executeFn;
     var undoFn = undoFn;
     var redoFn = redoFn;
 
-    this.do = function() { doFn(); };
+    this.execute = function() { executeFn(); };
     this.undo = function() { undoFn(); };
     this.redo = function() { redoFn(); };
 }
@@ -28,7 +28,7 @@ function CommandStack() {
 
     this.execute = function(command) {
         showSpinner();
-        command.do();
+        command.execute();
         successFn = function() {
             commands.splice(last_executed_index + 1, commands.length - (last_executed_index) - 1);
             commands.push(command);
