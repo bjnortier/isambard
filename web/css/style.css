@@ -58,22 +58,22 @@ body {
 
 #geom-model-doc table {
     border-collapse:collapse;
-    border: solid thin grey;
+    /*border: solid thin grey;*/
     text-align: left;
 }
 
 #geom-model-doc table td {
-    border: 1px solid #999;
+    border: 1px solid #666;
     padding: 3px;
 }
 
 
 #geom-model-doc table tr.odd {
-    background-color: #333;
+    background-color: #000;
 }
 
 #geom-model-doc table tr.even {
-    background-color: #000;
+    background-color: #222;
 }
 
 #geom-model-doc table tr.validation-error {
@@ -136,10 +136,11 @@ body {
 }
 
 .toolbar {
-    /*background-color: #666;*/
+    background-color: #333;
     padding: 5px;
-    border-radius: 5px;
+    border-radius: 0px;
     opacity: 0.75;
+    border: solid thin #666;
 }
 
 .toolbar img {
@@ -148,8 +149,8 @@ body {
 }
 
 .toolbar img:hover {
-    background-color: #888;
-    border-radius: 5px;
+    background-color: #444;
+    border-radius: 0px;
 }
 
 
